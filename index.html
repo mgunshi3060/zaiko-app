@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>在庫検索</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<h2>在庫検索</h2>
+
+<input type="text" id="search" placeholder="部番を入力">
+<button onclick="searchData()">検索</button>
+
+<ul id="result"></ul>
+
+<script>
+let data = [];
+
+// JSON読み込み
+fetch("zaiko.json")
+  .then(response => response.json())
+  .then(json => {
+    data = json;
+  });
+
+function searchData() {
+  const keyword = document.getElementById("search").value;
+  const result = document.getElementById("result");
+
+  result.innerHTML = "";
+
+  const filtered = data.filter(item => item.部番.includes(keyword));
+
+  filtered.forEach(item => {
+    const li = document.createElement("li");
+    li.textContent = `${item.部番} / ${item.工程}工程 / 在庫:${item.在庫}`;
+    result.appendChild(li);
+  });
+}
+</script>
+
+</body>
+</html>
