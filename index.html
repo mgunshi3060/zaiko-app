@@ -1,8 +1,7 @@
 <!--
 在庫検索アプリ
-・zaiko.json と koutei.json を読み込み
-・子品目コードから工程を自動表示
-・GitHub Pages対応（キャッシュ対策）
+部分一致で工程を取得する版
+GitHub Pages対応
 -->
 <!DOCTYPE html>
 <html lang="ja">
@@ -14,17 +13,16 @@
 <style>
 body {
   font-family: sans-serif;
-  padding: 5px;
+  padding: 10px;
   background: #f5f5f5;
 }
 
 h2 {
   text-align: center;
-  margin: 5px;
 }
 
 input {
-  width: 65%;
+  width: 80%;
   padding: 8px;
   font-size: 16px;
 }
@@ -35,7 +33,14 @@ button {
 }
 
 .result-block {
-  margin-top: 10px;
+  margin-top: 20px;
+}
+
+.flow {
+  background: #eee;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 5px;
 }
 
 .table-wrap {
@@ -45,31 +50,22 @@ button {
 table {
   width: 100%;
   border-collapse: collapse;
-  text-align: center;
   background: white;
 }
 
 th, td {
-  padding: 5px;
   border: 1px solid #ddd;
-  font-size: 11px;
-  white-space: nowrap;
+  padding: 6px;
+  font-size: 12px;
+  text-align: center;
 }
 
-.sunday { background: #ffdddd; }
-.saturday { background: #ddeeff; }
+.saturday { background: #dce9ff; }
+.sunday { background: #ffdede; }
 
 .danger {
   color: red;
   font-weight: bold;
-}
-
-.flow {
-  margin: 10px 0;
-  padding: 8px;
-  background: #eee;
-  border-radius: 5px;
-  font-size: 12px;
 }
 </style>
 </head>
@@ -86,47 +82,50 @@ th, td {
 <script>
 
 /*
-データ格納
+在庫データ
 */
-let data = [];
-let kouteiMap = {};
+let zaikoData = [];
 
 /*
-在庫JSON読み込み
-キャッシュ防止付き（GitHub Pages対策）
+工程データ
 */
-fetch("zaiko.json?v=" + Date.now())
-  .then(res => res.json())
-  .then(json => {
-    data = json;
-    console.log("在庫データ読み込みOK");
-  });
+let kouteiData = [];
 
 /*
-工程JSON読み込み
-品番をキーにMap化（高速検索）
+JSON読み込み
 */
-fetch("koutei.json?v=" + Date.now())
-  .then(res => res.json())
-  .then(json => {
-
-    json.forEach(k => {
-      if (k["品番"]) {
-        kouteiMap[k["品番"].toLowerCase()] = k;
-      }
-    });
-
-    console.log("工程Map作成OK", kouteiMap);
-  });
+Promise.all([
+  fetch("zaiko.json?v=" + Date.now()).then(r => r.json()),
+  fetch("koutei.json?v=" + Date.now()).then(r => r.json())
+]).then(([z, k]) => {
+  zaikoData = z;
+  kouteiData = k;
+  console.log("JSON読み込みOK");
+});
 
 /*
-検索処理
+工程取得（部分一致）
+*/
+function getKoutei(code) {
+
+  return kouteiData.find(k =>
+    code.toLowerCase().includes(
+      k["品番"].toLowerCase()
+    )
+  );
+
+}
+
+/*
+検索
 */
 function searchData() {
 
-  const keyword = document.getElementById("search").value
-                    .trim()
-                    .toLowerCase();
+  const keyword = document
+    .getElementById("search")
+    .value
+    .trim()
+    .toLowerCase();
 
   const result = document.getElementById("result");
   result.innerHTML = "";
@@ -136,7 +135,7 @@ function searchData() {
     return;
   }
 
-  const filtered = data.filter(item =>
+  const filtered = zaikoData.filter(item =>
     item["子品目コード"]
       .toLowerCase()
       .includes(keyword)
@@ -149,17 +148,7 @@ function searchData() {
 
   filtered.forEach(item => {
 
-    /*
-    子品目コードから工程取得
-    */
-    let koutei = null;
-
-    for (const key in kouteiMap) {
-      if (item["子品目コード"].toLowerCase().includes(key)) {
-        koutei = kouteiMap[key];
-        break;
-      }
-    }
+    const koutei = getKoutei(item["子品目コード"]);
 
     let html = `<div class="result-block">`;
 
@@ -168,32 +157,36 @@ function searchData() {
     */
     if (koutei) {
       html += `
-        <div class="flow">
-          <b>工程：</b> ${koutei["工程"].filter(x => x).join(" → ")}
-        </div>
-      `;
+      <div class="flow">
+        <b>工程：</b>
+        ${koutei["工程"]
+          .filter(x => x)
+          .join(" → ")}
+      </div>`;
     }
 
     /*
     タイトル
     */
     html += `
-      <b>${item["子品目コード"]}（${item["工程"]}）</b>
-      <div class="table-wrap">
-      <table><tr>
+    <b>${item["子品目コード"]}（${item["工程"]}）</b>
+    <div class="table-wrap">
+    <table>
+    <tr>
     `;
 
     const dates = Object.keys(item["在庫"]);
 
     /*
-    日付ヘッダー
+    日付ヘッダ
     */
     dates.forEach(d => {
+
       let cls = "";
       const clean = d.replace(/\s/g, "");
 
-      if (clean.includes("日")) cls = "sunday";
       if (clean.includes("土")) cls = "saturday";
+      if (clean.includes("日")) cls = "sunday";
 
       html += `<th class="${cls}">${d}</th>`;
     });
@@ -201,9 +194,10 @@ function searchData() {
     html += "</tr><tr>";
 
     /*
-    在庫データ
+    在庫
     */
     dates.forEach(d => {
+
       let value = item["在庫"][d];
       let display = value ?? "";
       let cls = "";
@@ -216,12 +210,18 @@ function searchData() {
       html += `<td class="${cls}">${display}</td>`;
     });
 
-    html += "</tr></table></div></div>";
+    html += `
+    </tr>
+    </table>
+    </div>
+    </div>
+    `;
 
     result.innerHTML += html;
 
   });
 }
+
 </script>
 
 </body>
