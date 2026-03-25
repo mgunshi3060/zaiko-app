@@ -1,28 +1,97 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>在庫検索</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在庫検索</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  padding: 10px;
+  background: #f5f5f5;
+}
+
+h2 {
+  text-align: center;
+}
+
+input {
+  width: 70%;
+  padding: 10px;
+  font-size: 16px;
+}
+
+button {
+  padding: 10px;
+  font-size: 16px;
+}
+
+.card {
+  background: white;
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.title {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.sub {
+  font-size: 12px;
+  color: gray;
+  margin-bottom: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+th, td {
+  padding: 6px;
+  border-bottom: 1px solid #ddd;
+  font-size: 12px;
+}
+
+.today {
+  background: #ffe082;
+}
+
+.danger {
+  color: white;
+  background: red;
+  font-weight: bold;
+}
+</style>
 </head>
+
 <body>
 
 <h2>在庫検索</h2>
 
-<input type="text" id="search" placeholder="部番を入力">
+<input type="text" id="search" placeholder="子品目コードを入力">
 <button onclick="searchData()">検索</button>
 
-<ul id="result"></ul>
+<div id="result"></div>
 
 <script>
 let data = [];
 
 // JSON読み込み
 fetch("zaiko.json")
-  .then(response => response.json())
-  .then(json => {
-    data = json;
-  });
+  .then(res => res.json())
+  .then(json => data = json);
+
+// 今日の日付取得
+function getToday() {
+  const d = new Date();
+  return (d.getMonth()+1) + "/" + d.getDate();
+}
 
 function searchData() {
   const keyword = document.getElementById("search").value;
@@ -30,12 +99,56 @@ function searchData() {
 
   result.innerHTML = "";
 
-  const filtered = data.filter(item => item.部番.includes(keyword));
+  const filtered = data.filter(item =>
+    item["子品目コード"].includes(keyword)
+  );
+
+  const today = getToday();
 
   filtered.forEach(item => {
-    const li = document.createElement("li");
-    li.textContent = `${item.部番} / ${item.工程}工程 / 在庫:${item.在庫}`;
-    result.appendChild(li);
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    let html = `
+      <div class="title">${item["子品目コード"]}</div>
+      <div class="sub">工程：${item["工程"]}</div>
+    `;
+
+    html += "<table><tr>";
+
+    const dates = Object.keys(item["在庫"]);
+
+    // ヘッダー
+    dates.forEach(d => {
+      html += `<th class="${d === today ? 'today' : ''}">${d}</th>`;
+    });
+
+    html += "</tr><tr>";
+
+    // データ
+    dates.forEach(d => {
+      let value = item["在庫"][d];
+      let display = value ?? "";
+      let cls = "";
+
+      if (value !== null && value !== "") {
+        if (value < 0) {
+          cls = "danger";
+          display = "▲" + Math.abs(value);
+        }
+      }
+
+      if (d === today) cls += " today";
+
+      html += `<td class="${cls}">${display}</td>`;
+    });
+
+    html += "</tr></table>";
+
+    card.innerHTML = html;
+    result.appendChild(card);
+
   });
 }
 </script>
