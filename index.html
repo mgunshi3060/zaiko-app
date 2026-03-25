@@ -37,7 +37,6 @@ button {
 
 .title {
   font-weight: bold;
-  margin-bottom: 5px;
 }
 
 .sub {
@@ -85,23 +84,50 @@ let data = [];
 // JSON読み込み
 fetch("zaiko.json")
   .then(res => res.json())
-  .then(json => data = json);
+  .then(json => {
+    data = json;
+    console.log("JSON読込OK", data);
+  })
+  .catch(err => {
+    console.error("JSON読込エラー", err);
+  });
 
-// 今日の日付取得
+// 今日の日付
 function getToday() {
   const d = new Date();
   return (d.getMonth()+1) + "/" + d.getDate();
 }
 
+// 検索処理
 function searchData() {
-  const keyword = document.getElementById("search").value;
-  const result = document.getElementById("result");
 
+  const keyword = document.getElementById("search").value
+                    .trim()
+                    .toLowerCase();
+
+  const result = document.getElementById("result");
   result.innerHTML = "";
 
-  const filtered = data.filter(item =>
-    item["子品目コード"].includes(keyword)
-  );
+  if (!keyword) {
+    result.innerHTML = "検索ワードを入力してください";
+    return;
+  }
+
+  const filtered = data.filter(item => {
+    if (!item["子品目コード"]) return false;
+
+    return item["子品目コード"]
+            .toString()
+            .toLowerCase()
+            .includes(keyword);
+  });
+
+  console.log("検索結果", filtered);
+
+  if (filtered.length === 0) {
+    result.innerHTML = "該当なし";
+    return;
+  }
 
   const today = getToday();
 
@@ -112,7 +138,7 @@ function searchData() {
 
     let html = `
       <div class="title">${item["子品目コード"]}</div>
-      <div class="sub">工程：${item["工程"]}</div>
+      <div class="sub">工程：${item["工程"] ?? ""}</div>
     `;
 
     html += "<table><tr>";
