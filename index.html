@@ -32,7 +32,6 @@ button {
   margin-top: 10px;
 }
 
-/* 横スクロール対応 */
 .table-wrap {
   overflow-x: auto;
 }
@@ -74,15 +73,20 @@ th, td {
 <script>
 let data = [];
 
+// JSON読み込み
 fetch("zaiko.json")
   .then(res => res.json())
   .then(json => data = json);
 
+// 今日（日付＋曜日）
 function getToday() {
   const d = new Date();
-  return (d.getMonth()+1) + "/" + d.getDate();
+  const weekdays = ["日","月","火","水","木","金","土"];
+  const w = weekdays[d.getDay()];
+  return (d.getMonth()+1) + "/" + d.getDate() + "(" + w + ")";
 }
 
+// 検索
 function searchData() {
 
   const keyword = document.getElementById("search").value
@@ -111,12 +115,14 @@ function searchData() {
 
     const dates = Object.keys(item["在庫"]);
 
+    // ヘッダー
     dates.forEach(d => {
       html += `<th class="${d === today ? 'today' : ''}">${d}</th>`;
     });
 
     html += "</tr><tr>";
 
+    // データ
     dates.forEach(d => {
       let value = item["在庫"][d];
       let display = value ?? "";
