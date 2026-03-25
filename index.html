@@ -1,3 +1,9 @@
+<!--
+在庫検索アプリ
+・zaiko.json と koutei.json を読み込み
+・子品目コードから工程を自動表示
+・GitHub Pages対応（キャッシュ対策）
+-->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -50,22 +56,14 @@ th, td {
   white-space: nowrap;
 }
 
-/* 土日色 */
-.sunday {
-  background: #ffdddd;
-}
+.sunday { background: #ffdddd; }
+.saturday { background: #ddeeff; }
 
-.saturday {
-  background: #ddeeff;
-}
-
-/* マイナス */
 .danger {
   color: red;
   font-weight: bold;
 }
 
-/* 工程表示 */
 .flow {
   margin: 10px 0;
   padding: 8px;
@@ -86,26 +84,44 @@ th, td {
 <div id="result"></div>
 
 <script>
-let data = [];
-let kouteiData = [];
 
-// 在庫JSON
-fetch("zaiko.json")
+/*
+データ格納
+*/
+let data = [];
+let kouteiMap = {};
+
+/*
+在庫JSON読み込み
+キャッシュ防止付き（GitHub Pages対策）
+*/
+fetch("zaiko.json?v=" + Date.now())
   .then(res => res.json())
   .then(json => {
     data = json;
-    console.log("在庫JSON OK", data);
+    console.log("在庫データ読み込みOK");
   });
 
-// 工程JSON
-fetch("koutei.json")
+/*
+工程JSON読み込み
+品番をキーにMap化（高速検索）
+*/
+fetch("koutei.json?v=" + Date.now())
   .then(res => res.json())
   .then(json => {
-    kouteiData = json;
-    console.log("工程JSON OK", kouteiData);
+
+    json.forEach(k => {
+      if (k["品番"]) {
+        kouteiMap[k["品番"].toLowerCase()] = k;
+      }
+    });
+
+    console.log("工程Map作成OK", kouteiMap);
   });
 
-// 検索
+/*
+検索処理
+*/
 function searchData() {
 
   const keyword = document.getElementById("search").value
@@ -133,25 +149,34 @@ function searchData() {
 
   filtered.forEach(item => {
 
-    // ▼ 工程取得（ここが重要）
-    const koutei = kouteiData.find(k =>
-      item["子品目コード"]
-        .toLowerCase()
-        .includes(k["品番"].toLowerCase())
-    );
+    /*
+    子品目コードから工程取得
+    */
+    let koutei = null;
+
+    for (const key in kouteiMap) {
+      if (item["子品目コード"].toLowerCase().includes(key)) {
+        koutei = kouteiMap[key];
+        break;
+      }
+    }
 
     let html = `<div class="result-block">`;
 
-    // ▼ 工程表示（在庫の上）
+    /*
+    工程表示
+    */
     if (koutei) {
       html += `
         <div class="flow">
-          <b>工程：</b> ${koutei["工程"].join(" → ")}
+          <b>工程：</b> ${koutei["工程"].filter(x => x).join(" → ")}
         </div>
       `;
     }
 
-    // ▼ タイトル
+    /*
+    タイトル
+    */
     html += `
       <b>${item["子品目コード"]}（${item["工程"]}）</b>
       <div class="table-wrap">
@@ -160,7 +185,9 @@ function searchData() {
 
     const dates = Object.keys(item["在庫"]);
 
-    // ▼ 日付ヘッダー
+    /*
+    日付ヘッダー
+    */
     dates.forEach(d => {
       let cls = "";
       const clean = d.replace(/\s/g, "");
@@ -173,7 +200,9 @@ function searchData() {
 
     html += "</tr><tr>";
 
-    // ▼ データ
+    /*
+    在庫データ
+    */
     dates.forEach(d => {
       let value = item["在庫"][d];
       let display = value ?? "";
