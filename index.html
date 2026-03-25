@@ -2,187 +2,219 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>在庫検索</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工程情報 / 在庫検索</title>
 <style>
-body{
-  font-family:sans-serif;
-  background:#f2f2f2;
-  padding:20px;
+* { box-sizing: border-box; }
+body {
+  font-family: sans-serif;
+  padding: 10px;
+  background: #f5f5f5;
+  font-size: 14px;
 }
 
-h1{
-  text-align:center;
+/* ===== 工程情報 ===== */
+#koutei-section {
+  background: white;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+#koutei-section h2 {
+  text-align: center;
+  font-size: 16px;
+  margin: 0 0 8px 0;
+  font-weight: bold;
+}
+#koutei-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.koutei-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.koutei-code { font-weight: bold; min-width: 90px; }
+.koutei-lot  { min-width: 40px; color: #333; }
+.koutei-processes { display: flex; gap: 4px; flex-wrap: wrap; }
+.koutei-step {
+  padding: 2px 8px;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 12px;
 }
 
-.sectionTitle{
-  font-size:22px;
-  margin-top:20px;
-  margin-bottom:10px;
+/* ===== 在庫検索 ===== */
+#zaiko-section h2 {
+  text-align: center;
+  font-size: 16px;
+  margin: 4px 0 8px 0;
 }
+.search-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.search-row input {
+  flex: 1;
+  padding: 8px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+.search-row button {
+  padding: 8px 14px;
+  font-size: 15px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #aaa;
+  border-radius: 3px;
+}
+.search-row button:hover { background: #e8e8e8; }
 
-#processBox{
-  background:#fff;
-  padding:15px;
-  border-radius:6px;
-  margin-bottom:20px;
+/* ===== 結果テーブル ===== */
+.result-block { margin-top: 12px; }
+.result-block b { display: block; margin-bottom: 4px; font-size: 13px; }
+.table-wrap { overflow-x: auto; }
+table {
+  border-collapse: collapse;
+  text-align: center;
+  background: white;
+  font-size: 11px;
+  white-space: nowrap;
 }
-
-#searchArea{
-  text-align:center;
-  margin-bottom:20px;
-}
-
-input{
-  width:500px;
-  padding:10px;
-  font-size:18px;
-}
-
-button{
-  padding:10px 20px;
-}
-
-.item{
-  background:#fff;
-  padding:10px;
-  margin-bottom:10px;
-  border-radius:6px;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:10px;
-}
-
-td{
-  border:1px solid #ddd;
-  padding:6px;
-  text-align:center;
-}
-
-.dateRow{
-  background:#fafafa;
-  font-weight:bold;
-}
+th, td { padding: 5px 8px; border: 1px solid #ddd; }
+.sunday   { background: #ffdddd; }
+.saturday { background: #ddeeff; }
+.danger   { color: red; font-weight: bold; }
 </style>
 </head>
-
 <body>
 
-<h1>工程情報</h1>
-
-<div id="processBox">
-検索するとここに工程が表示されます
+<!-- 工程情報 -->
+<div id="koutei-section">
+  <h2>工程情報</h2>
+  <div id="koutei-list">読み込み中...</div>
 </div>
 
-<div class="sectionTitle">在庫情報</div>
-
-<div id="searchArea">
-<input id="search" placeholder="品番検索">
-<button onclick="search()">検索</button>
+<!-- 在庫検索 -->
+<div id="zaiko-section">
+  <h2>在庫検索</h2>
+  <div class="search-row">
+    <input type="text" id="search" placeholder="子品目コード（例：FE4）">
+    <button onclick="searchData()">検索</button>
+  </div>
+  <div id="result"></div>
 </div>
-
-<div id="result"></div>
 
 <script>
-/*
-在庫 + 工程 データ格納
-*/
 let zaikoData = [];
-let kouteiData = [];
 
-/*
-JSON読み込み
-*/
-fetch("zaiko.json?v=" + Date.now())
-.then(r => r.json())
-.then(data => {
-  zaikoData = data;
-});
-
-fetch("koutei.json?v=" + Date.now())
-.then(r => r.json())
-.then(data => {
-  kouteiData = data;
-});
-
-/*
-検索処理（部分一致）
-*/
-function search(){
-
-  const word = document.getElementById("search").value.toLowerCase();
-  const result = document.getElementById("result");
-  const processBox = document.getElementById("processBox");
-
-  result.innerHTML = "";
-
-  /*
-  工程検索
-  */
-  let koutei = kouteiData.find(k =>
-    k["品番"] &&
-    k["品番"].toLowerCase().includes(word)
-  );
-
-  if(koutei){
-    const processList = Object.keys(koutei)
-      .filter(x => x !== "品番")
-      .map(x => koutei[x])
-      .filter(x => x);
-
-    processBox.innerHTML =
-      "<b>" + koutei["品番"] + "</b> ： " +
-      processList.join(" → ");
-  }else{
-    processBox.innerHTML = "工程情報なし";
-  }
-
-  /*
-  在庫検索
-  */
-  const filtered = zaikoData.filter(item =>
-    item["子品目コード"] &&
-    item["子品目コード"].toLowerCase().includes(word)
-  );
-
-  filtered.forEach(item => {
-
-    const div = document.createElement("div");
-    div.className = "item";
-
-    let html = "<b>" + item["子品目コード"] + "</b>";
-
-    /*
-    日付 + 数量テーブル
-    */
-    if(item["日付"] && item["数量"]){
-
-      html += "<table>";
-
-      html += "<tr class='dateRow'>";
-      item["日付"].forEach(d=>{
-        html += "<td>" + d + "</td>";
-      });
-      html += "</tr>";
-
-      html += "<tr>";
-      item["数量"].forEach(q=>{
-        html += "<td>" + q + "</td>";
-      });
-      html += "</tr>";
-
-      html += "</table>";
+// ===== koutei.json 読み込み =====
+fetch("koutei.json")
+  .then(res => res.json())
+  .then(json => {
+    const list = document.getElementById("koutei-list");
+    if (!json || json.length === 0) {
+      list.innerHTML = "工程データなし";
+      return;
     }
+    list.innerHTML = "";
+    json.forEach(item => {
+      const code  = item["品目コード"] || item["code"] || "";
+      const lot   = item["ロット"]     || item["lot"]  || "";
+      const procs = item["工程"]       || item["processes"] || [];
 
-    div.innerHTML = html;
-    result.appendChild(div);
+      const stepsHtml = procs.map(p =>
+        `<span class="koutei-step">${p}</span>`
+      ).join("");
+
+      list.innerHTML += `
+        <div class="koutei-row">
+          <span class="koutei-code">${code}</span>
+          <span class="koutei-lot">${lot}</span>
+          <div class="koutei-processes">${stepsHtml}</div>
+        </div>
+      `;
+    });
+  })
+  .catch(err => {
+    document.getElementById("koutei-list").innerHTML = "工程データ読み込みエラー";
+    console.error("koutei.json エラー:", err);
   });
 
-}
-</script>
+// ===== zaiko.json 読み込み =====
+fetch("zaiko.json")
+  .then(res => res.json())
+  .then(json => {
+    zaikoData = json;
+    console.log("zaiko.json OK", zaikoData.length, "件");
+  })
+  .catch(err => {
+    console.error("zaiko.json エラー:", err);
+  });
 
+// ===== 検索 =====
+function searchData() {
+  const keyword = document.getElementById("search").value.trim().toLowerCase();
+  const result  = document.getElementById("result");
+  result.innerHTML = "";
+
+  if (!keyword) {
+    result.innerHTML = "検索ワードを入力してください";
+    return;
+  }
+
+  const filtered = zaikoData.filter(item =>
+    (item["子品目コード"] || "").toLowerCase().includes(keyword)
+  );
+
+  if (filtered.length === 0) {
+    result.innerHTML = "該当なし";
+    return;
+  }
+
+  filtered.forEach(item => {
+    const dates = Object.keys(item["在庫"] || {});
+
+    const headerCells = dates.map(d => {
+      const clean = d.replace(/\s/g, "");
+      let cls = "";
+      if (clean.includes("日")) cls = "sunday";
+      else if (clean.includes("土")) cls = "saturday";
+      return `<th class="${cls}">${d}</th>`;
+    }).join("");
+
+    const dataCells = dates.map(d => {
+      const value = item["在庫"][d];
+      if (value == null) return `<td></td>`;
+      if (value < 0)     return `<td class="danger">▲${Math.abs(value)}</td>`;
+      return `<td>${value}</td>`;
+    }).join("");
+
+    result.innerHTML += `
+      <div class="result-block">
+        <b>${item["子品目コード"]}（${item["工程"] || ""}）</b>
+        <div class="table-wrap">
+          <table>
+            <tr>${headerCells}</tr>
+            <tr>${dataCells}</tr>
+          </table>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// Enterキーで検索
+document.getElementById("search").addEventListener("keydown", e => {
+  if (e.key === "Enter") searchData();
+});
+</script>
 </body>
 </html>
