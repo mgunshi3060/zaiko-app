@@ -38,8 +38,8 @@ body {
   flex-wrap: wrap;
   font-size: 13px;
 }
-.koutei-code { font-weight: bold; min-width: 90px; }
-.koutei-lot  { min-width: 40px; color: #333; }
+.koutei-code { font-weight: bold; min-width: 120px; }
+.koutei-lot  { min-width: 55px; color: #555; }
 .koutei-processes { display: flex; gap: 4px; flex-wrap: wrap; }
 .koutei-step {
   padding: 2px 8px;
@@ -126,9 +126,10 @@ fetch("koutei.json")
     }
     list.innerHTML = "";
     json.forEach(item => {
-      const code  = item["品目コード"] || item["code"] || "";
-      const lot   = item["ロット"]     || item["lot"]  || "";
-      const procs = item["工程"]       || item["processes"] || [];
+      const code  = item["品番"]  || "";
+      const lot   = item["図番"]  || "";
+      // 空文字を除外
+      const procs = (item["工程"] || []).filter(p => p !== "");
 
       const stepsHtml = procs.map(p =>
         `<span class="koutei-step">${p}</span>`
@@ -153,7 +154,7 @@ fetch("zaiko.json")
   .then(res => res.json())
   .then(json => {
     zaikoData = json;
-    console.log("zaiko.json OK", zaikoData.length, "件");
+    console.log("zaiko.json OK:", zaikoData.length, "件");
   })
   .catch(err => {
     console.error("zaiko.json エラー:", err);
@@ -193,8 +194,10 @@ function searchData() {
     const dataCells = dates.map(d => {
       const value = item["在庫"][d];
       if (value == null) return `<td></td>`;
-      if (value < 0)     return `<td class="danger">▲${Math.abs(value)}</td>`;
-      return `<td>${value}</td>`;
+      // 小数点を整数表示に変換
+      const num = Math.round(value);
+      if (num < 0) return `<td class="danger">▲${Math.abs(num)}</td>`;
+      return `<td>${num}</td>`;
     }).join("");
 
     result.innerHTML += `
