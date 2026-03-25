@@ -32,7 +32,6 @@ button {
   margin-top: 10px;
 }
 
-/* 横スクロール */
 .table-wrap {
   overflow-x: auto;
 }
@@ -51,7 +50,16 @@ th, td {
   white-space: nowrap;
 }
 
-/* マイナス表示 */
+/* ▼ 土日色分け */
+.sunday {
+  background: #ffdddd;
+}
+
+.saturday {
+  background: #ddeeff;
+}
+
+/* ▼ マイナス */
 .danger {
   color: red;
   font-weight: bold;
@@ -82,7 +90,7 @@ fetch("zaiko.json")
     console.error("JSONエラー", err);
   });
 
-// 検索
+// 検索処理
 function searchData() {
 
   const keyword = document.getElementById("search").value
@@ -119,14 +127,19 @@ function searchData() {
 
     const dates = Object.keys(item["在庫"]);
 
-    // ヘッダー（日付そのまま表示）
+    // ▼ 日付ヘッダー（土日色分け）
     dates.forEach(d => {
-      html += `<th>${d}</th>`;
+      let cls = "";
+
+      if (d.includes("(日)")) cls = "sunday";
+      if (d.includes("(土)")) cls = "saturday";
+
+      html += `<th class="${cls}">${d}</th>`;
     });
 
     html += "</tr><tr>";
 
-    // データ
+    // ▼ データ
     dates.forEach(d => {
       let value = item["在庫"][d];
       let display = value ?? "";
