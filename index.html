@@ -64,6 +64,15 @@ th, td {
   color: red;
   font-weight: bold;
 }
+
+/* 工程表示 */
+.flow {
+  margin: 10px 0;
+  padding: 8px;
+  background: #eee;
+  border-radius: 5px;
+  font-size: 12px;
+}
 </style>
 </head>
 
@@ -78,16 +87,22 @@ th, td {
 
 <script>
 let data = [];
+let kouteiData = [];
 
-// JSON読み込み
+// 在庫JSON
 fetch("zaiko.json")
   .then(res => res.json())
   .then(json => {
     data = json;
-    console.log("JSON OK", data);
-  })
-  .catch(err => {
-    console.error("JSONエラー", err);
+    console.log("在庫JSON OK", data);
+  });
+
+// 工程JSON
+fetch("koutei.json")
+  .then(res => res.json())
+  .then(json => {
+    kouteiData = json;
+    console.log("工程JSON OK", kouteiData);
   });
 
 // 検索
@@ -118,19 +133,36 @@ function searchData() {
 
   filtered.forEach(item => {
 
-    let html = `
-      <div class="result-block">
-        <b>${item["子品目コード"]}（${item["工程"]}）</b>
-        <div class="table-wrap">
-        <table><tr>
+    // ▼ 工程取得（ここが重要）
+    const koutei = kouteiData.find(k =>
+      item["子品目コード"]
+        .toLowerCase()
+        .includes(k["品番"].toLowerCase())
+    );
+
+    let html = `<div class="result-block">`;
+
+    // ▼ 工程表示（在庫の上）
+    if (koutei) {
+      html += `
+        <div class="flow">
+          <b>工程：</b> ${koutei["工程"].join(" → ")}
+        </div>
+      `;
+    }
+
+    // ▼ タイトル
+    html += `
+      <b>${item["子品目コード"]}（${item["工程"]}）</b>
+      <div class="table-wrap">
+      <table><tr>
     `;
 
     const dates = Object.keys(item["在庫"]);
 
-    // ▼ 日付ヘッダー（土日色分け：全角/半角対応）
+    // ▼ 日付ヘッダー
     dates.forEach(d => {
       let cls = "";
-
       const clean = d.replace(/\s/g, "");
 
       if (clean.includes("日")) cls = "sunday";
