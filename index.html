@@ -8,53 +8,47 @@
 <style>
 body {
   font-family: sans-serif;
-  padding: 10px;
+  padding: 5px;
   background: #f5f5f5;
 }
 
 h2 {
   text-align: center;
+  margin: 5px;
 }
 
 input {
-  width: 70%;
-  padding: 10px;
+  width: 65%;
+  padding: 8px;
   font-size: 16px;
 }
 
 button {
-  padding: 10px;
+  padding: 8px;
   font-size: 16px;
 }
 
-.card {
-  background: white;
-  margin-top: 15px;
-  padding: 10px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+.result-block {
+  margin-top: 10px;
 }
 
-.title {
-  font-weight: bold;
-}
-
-.sub {
-  font-size: 12px;
-  color: gray;
-  margin-bottom: 10px;
+/* 横スクロール対応 */
+.table-wrap {
+  overflow-x: auto;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
   text-align: center;
+  background: white;
 }
 
 th, td {
-  padding: 6px;
-  border-bottom: 1px solid #ddd;
-  font-size: 12px;
+  padding: 5px;
+  border: 1px solid #ddd;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .today {
@@ -62,8 +56,7 @@ th, td {
 }
 
 .danger {
-  color: white;
-  background: red;
+  color: red;
   font-weight: bold;
 }
 </style>
@@ -73,7 +66,7 @@ th, td {
 
 <h2>在庫検索</h2>
 
-<input type="text" id="search" placeholder="子品目コードを入力">
+<input type="text" id="search" placeholder="子品目コード">
 <button onclick="searchData()">検索</button>
 
 <div id="result"></div>
@@ -81,24 +74,15 @@ th, td {
 <script>
 let data = [];
 
-// JSON読み込み
 fetch("zaiko.json")
   .then(res => res.json())
-  .then(json => {
-    data = json;
-    console.log("JSON読込OK", data);
-  })
-  .catch(err => {
-    console.error("JSON読込エラー", err);
-  });
+  .then(json => data = json);
 
-// 今日の日付
 function getToday() {
   const d = new Date();
   return (d.getMonth()+1) + "/" + d.getDate();
 }
 
-// 検索処理
 function searchData() {
 
   const keyword = document.getElementById("search").value
@@ -108,61 +92,39 @@ function searchData() {
   const result = document.getElementById("result");
   result.innerHTML = "";
 
-  if (!keyword) {
-    result.innerHTML = "検索ワードを入力してください";
-    return;
-  }
-
-  const filtered = data.filter(item => {
-    if (!item["子品目コード"]) return false;
-
-    return item["子品目コード"]
-            .toString()
-            .toLowerCase()
-            .includes(keyword);
-  });
-
-  console.log("検索結果", filtered);
-
-  if (filtered.length === 0) {
-    result.innerHTML = "該当なし";
-    return;
-  }
+  const filtered = data.filter(item =>
+    item["子品目コード"]
+      .toLowerCase()
+      .includes(keyword)
+  );
 
   const today = getToday();
 
   filtered.forEach(item => {
 
-    const card = document.createElement("div");
-    card.className = "card";
-
     let html = `
-      <div class="title">${item["子品目コード"]}</div>
-      <div class="sub">工程：${item["工程"] ?? ""}</div>
+      <div class="result-block">
+        <b>${item["子品目コード"]}（${item["工程"]}）</b>
+        <div class="table-wrap">
+        <table><tr>
     `;
-
-    html += "<table><tr>";
 
     const dates = Object.keys(item["在庫"]);
 
-    // ヘッダー
     dates.forEach(d => {
       html += `<th class="${d === today ? 'today' : ''}">${d}</th>`;
     });
 
     html += "</tr><tr>";
 
-    // データ
     dates.forEach(d => {
       let value = item["在庫"][d];
       let display = value ?? "";
       let cls = "";
 
-      if (value !== null && value !== "") {
-        if (value < 0) {
-          cls = "danger";
-          display = "▲" + Math.abs(value);
-        }
+      if (value < 0) {
+        cls = "danger";
+        display = "▲" + Math.abs(value);
       }
 
       if (d === today) cls += " today";
@@ -170,10 +132,9 @@ function searchData() {
       html += `<td class="${cls}">${display}</td>`;
     });
 
-    html += "</tr></table>";
+    html += "</tr></table></div></div>";
 
-    card.innerHTML = html;
-    result.appendChild(card);
+    result.innerHTML += html;
 
   });
 }
