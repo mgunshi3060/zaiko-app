@@ -102,6 +102,9 @@ function searchData() {
       .includes(keyword)
   );
 
+console.log(Object.keys(data[0]["在庫"])); // JSONの日付一覧
+console.log("today:", getToday());        // 今日の日付
+
   const today = getToday();
 
   filtered.forEach(item => {
