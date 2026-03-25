@@ -32,6 +32,7 @@ button {
   margin-top: 10px;
 }
 
+/* 横スクロール */
 .table-wrap {
   overflow-x: auto;
 }
@@ -50,10 +51,7 @@ th, td {
   white-space: nowrap;
 }
 
-.today {
-  background: #ffe082;
-}
-
+/* マイナス表示 */
 .danger {
   color: red;
   font-weight: bold;
@@ -76,15 +74,13 @@ let data = [];
 // JSON読み込み
 fetch("zaiko.json")
   .then(res => res.json())
-  .then(json => data = json);
-
-// 今日（日付＋曜日）
-function getToday() {
-  const d = new Date();
-  const weekdays = ["日","月","火","水","木","金","土"];
-  const w = weekdays[d.getDay()];
-  return (d.getMonth()+1) + "/" + d.getDate() + "(" + w + ")";
-}
+  .then(json => {
+    data = json;
+    console.log("JSON OK", data);
+  })
+  .catch(err => {
+    console.error("JSONエラー", err);
+  });
 
 // 検索
 function searchData() {
@@ -96,16 +92,21 @@ function searchData() {
   const result = document.getElementById("result");
   result.innerHTML = "";
 
+  if (!keyword) {
+    result.innerHTML = "検索ワードを入力してください";
+    return;
+  }
+
   const filtered = data.filter(item =>
     item["子品目コード"]
       .toLowerCase()
       .includes(keyword)
   );
 
-console.log(Object.keys(data[0]["在庫"])); // JSONの日付一覧
-console.log("today:", getToday());        // 今日の日付
-
-  const today = getToday();
+  if (filtered.length === 0) {
+    result.innerHTML = "該当なし";
+    return;
+  }
 
   filtered.forEach(item => {
 
@@ -118,9 +119,9 @@ console.log("today:", getToday());        // 今日の日付
 
     const dates = Object.keys(item["在庫"]);
 
-    // ヘッダー
+    // ヘッダー（日付そのまま表示）
     dates.forEach(d => {
-      html += `<th class="${d === today ? 'today' : ''}">${d}</th>`;
+      html += `<th>${d}</th>`;
     });
 
     html += "</tr><tr>";
@@ -135,8 +136,6 @@ console.log("today:", getToday());        // 今日の日付
         cls = "danger";
         display = "▲" + Math.abs(value);
       }
-
-      if (d === today) cls += " today";
 
       html += `<td class="${cls}">${display}</td>`;
     });
