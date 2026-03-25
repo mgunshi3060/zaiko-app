@@ -1,86 +1,81 @@
-<!--
-在庫検索アプリ
-部分一致で工程を取得する版
-GitHub Pages対応
--->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>在庫検索</title>
 
 <style>
-body {
+body{
   font-family: sans-serif;
-  padding: 10px;
-  background: #f5f5f5;
+  background:#f2f2f2;
+  padding:20px;
 }
 
-h2 {
-  text-align: center;
+h1{
+  text-align:center;
 }
 
-input {
-  width: 80%;
-  padding: 8px;
-  font-size: 16px;
+#processBox{
+  background:#fff;
+  padding:15px;
+  margin-bottom:10px;
+  border-radius:6px;
+  font-size:18px;
 }
 
-button {
-  padding: 8px;
-  font-size: 16px;
+#searchArea{
+  text-align:center;
+  margin-bottom:20px;
 }
 
-.result-block {
-  margin-top: 20px;
+input{
+  width:500px;
+  padding:10px;
+  font-size:18px;
 }
 
-.flow {
-  background: #eee;
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 5px;
+button{
+  padding:10px 20px;
+  font-size:16px;
 }
 
-.table-wrap {
-  overflow-x: auto;
+.item{
+  background:#fff;
+  padding:10px;
+  margin-bottom:10px;
+  border-radius:6px;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
+table{
+  width:100%;
+  border-collapse:collapse;
 }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 6px;
-  font-size: 12px;
-  text-align: center;
-}
-
-.saturday { background: #dce9ff; }
-.sunday { background: #ffdede; }
-
-.danger {
-  color: red;
-  font-weight: bold;
+td{
+  border:1px solid #ddd;
+  text-align:center;
+  padding:6px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>在庫検索</h2>
+<h1>工程情報</h1>
 
-<input type="text" id="search" placeholder="子品目コード">
-<button onclick="searchData()">検索</button>
+<!-- ここに工程表示（検索バーの上） -->
+<div id="processBox">
+工程情報はここに表示されます
+</div>
+
+<div id="searchArea">
+<input id="search" placeholder="品番検索">
+<button onclick="search()">検索</button>
+</div>
 
 <div id="result"></div>
 
 <script>
-
 /*
 在庫データ
 */
@@ -92,136 +87,83 @@ let zaikoData = [];
 let kouteiData = [];
 
 /*
-JSON読み込み
+JSON読み込み（キャッシュ防止）
 */
-Promise.all([
-  fetch("zaiko.json?v=" + Date.now()).then(r => r.json()),
-  fetch("koutei.json?v=" + Date.now()).then(r => r.json())
-]).then(([z, k]) => {
-  zaikoData = z;
-  kouteiData = k;
-  console.log("JSON読み込みOK");
+fetch("zaiko.json?v=" + Date.now())
+.then(r => r.json())
+.then(data => {
+  zaikoData = data;
+});
+
+fetch("koutei.json?v=" + Date.now())
+.then(r => r.json())
+.then(data => {
+  kouteiData = data;
 });
 
 /*
-工程取得（部分一致）
+検索処理
+部分一致
 */
-function getKoutei(code) {
+function search(){
 
-  return kouteiData.find(k =>
-    code.toLowerCase().includes(
-      k["品番"].toLowerCase()
-    )
-  );
-
-}
-
-/*
-検索
-*/
-function searchData() {
-
-  const keyword = document
-    .getElementById("search")
-    .value
-    .trim()
-    .toLowerCase();
-
+  const word = document.getElementById("search").value.toLowerCase();
   const result = document.getElementById("result");
+  const processBox = document.getElementById("processBox");
+
   result.innerHTML = "";
 
-  if (!keyword) {
-    result.innerHTML = "検索ワードを入力してください";
-    return;
-  }
-
-  const filtered = zaikoData.filter(item =>
-    item["子品目コード"]
-      .toLowerCase()
-      .includes(keyword)
+  /*
+  工程検索（部分一致）
+  */
+  let koutei = kouteiData.find(k =>
+    k["品番"] &&
+    k["品番"].toLowerCase().includes(word)
   );
 
-  if (filtered.length === 0) {
-    result.innerHTML = "該当なし";
-    return;
+  if(koutei){
+    const processList = Object.keys(koutei)
+      .filter(x => x !== "品番")
+      .map(x => koutei[x])
+      .filter(x => x);
+
+    processBox.innerHTML =
+      "<b>" + koutei["品番"] + "</b> ： " +
+      processList.join(" → ");
+  }else{
+    processBox.innerHTML = "工程情報なし";
   }
+
+  /*
+  在庫検索
+  */
+  const filtered = zaikoData.filter(item =>
+    item["子品目コード"] &&
+    item["子品目コード"].toLowerCase().includes(word)
+  );
 
   filtered.forEach(item => {
 
-    const koutei = getKoutei(item["子品目コード"]);
+    const div = document.createElement("div");
+    div.className = "item";
 
-    let html = `<div class="result-block">`;
+    let html = "<b>" + item["子品目コード"] + "</b>";
 
-    /*
-    工程表示
-    */
-    if (koutei) {
-      html += `
-      <div class="flow">
-        <b>工程：</b>
-        ${koutei["工程"]
-          .filter(x => x)
-          .join(" → ")}
-      </div>`;
+    if(item["データ"]){
+      html += "<table><tr>";
+
+      item["データ"].forEach(d=>{
+        html += "<td>" + d + "</td>";
+      });
+
+      html += "</tr></table>";
     }
 
-    /*
-    タイトル
-    */
-    html += `
-    <b>${item["子品目コード"]}（${item["工程"]}）</b>
-    <div class="table-wrap">
-    <table>
-    <tr>
-    `;
-
-    const dates = Object.keys(item["在庫"]);
-
-    /*
-    日付ヘッダ
-    */
-    dates.forEach(d => {
-
-      let cls = "";
-      const clean = d.replace(/\s/g, "");
-
-      if (clean.includes("土")) cls = "saturday";
-      if (clean.includes("日")) cls = "sunday";
-
-      html += `<th class="${cls}">${d}</th>`;
-    });
-
-    html += "</tr><tr>";
-
-    /*
-    在庫
-    */
-    dates.forEach(d => {
-
-      let value = item["在庫"][d];
-      let display = value ?? "";
-      let cls = "";
-
-      if (value < 0) {
-        cls = "danger";
-        display = "▲" + Math.abs(value);
-      }
-
-      html += `<td class="${cls}">${display}</td>`;
-    });
-
-    html += `
-    </tr>
-    </table>
-    </div>
-    </div>
-    `;
-
-    result.innerHTML += html;
-
+    div.innerHTML = html;
+    result.appendChild(div);
   });
-}
 
+}
 </script>
 
 </body>
