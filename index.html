@@ -137,12 +137,12 @@ function searchData() {
 
   // --- 工程情報 ---
   const kFiltered = kouteiData.filter(item =>
-    (item["品番"] || "").toLowerCase().includes(keyword)
+    (item["部番"] || "").toLowerCase().includes(keyword)
   );
   if (kFiltered.length > 0) {
     kouteiDiv.style.display = "block";
     kFiltered.forEach(item => {
-      const code  = item["品番"] || "";
+      const code  = item["部番"] || "";
       const lot   = item["図番"] || "";
       const procs = (item["工程"] || []).filter(p => p !== "");
       const stepsHtml = procs.map(p =>
