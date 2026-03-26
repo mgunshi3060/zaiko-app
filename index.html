@@ -94,7 +94,7 @@ th, td { padding: 5px 8px; border: 1px solid #ddd; }
 
 <!-- 検索 -->
 <div class="search-row">
-  <input type="text" id="search" placeholder="子品目コード（例：FE4）">
+  <input type="text" id="search" placeholder="部番（例：FE4）">
   <button onclick="searchData()">検索</button>
 </div>
 
@@ -160,7 +160,7 @@ function searchData() {
 
   // --- 在庫テーブル ---
   const zFiltered = zaikoData.filter(item =>
-    (item["子品目コード"] || "").toLowerCase().includes(keyword)
+    (item["部番"] || "").toLowerCase().includes(keyword)
   );
   if (zFiltered.length === 0) {
     zaikoDiv.innerHTML = kFiltered.length > 0 ? "在庫データなし" : "該当なし";
@@ -187,7 +187,7 @@ function searchData() {
 
     zaikoDiv.innerHTML += `
       <div class="result-block">
-        <b>${item["子品目コード"]}（${item["工程"] || ""}）</b>
+        <b>${item["部番"]}（${item["工程"] || ""}）</b>
         <div class="table-wrap">
           <table>
             <tr>${headerCells}</tr>
