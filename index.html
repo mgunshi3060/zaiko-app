@@ -94,7 +94,7 @@ th, td { padding: 5px 8px; border: 1px solid #ddd; }
 
 <!-- 検索 -->
 <div class="search-row">
-  <input type="text" id="search" placeholder="部番（例：FE4）">
+  <input type="text" id="search" placeholder="部番（例：FC6-0104）">
   <button onclick="searchData()">検索</button>
 </div>
 
@@ -137,12 +137,12 @@ function searchData() {
 
   // --- 工程情報 ---
   const kFiltered = kouteiData.filter(item =>
-    (item["部番"] || "").toLowerCase().includes(keyword)
+    (item["品番"] || "").toLowerCase().includes(keyword)
   );
   if (kFiltered.length > 0) {
     kouteiDiv.style.display = "block";
     kFiltered.forEach(item => {
-      const code  = item["部番"] || "";
+      const code  = item["品番"] || "";
       const lot   = item["図番"] || "";
       const procs = (item["工程"] || []).filter(p => p !== "");
       const stepsHtml = procs.map(p =>
@@ -187,7 +187,7 @@ function searchData() {
 
     zaikoDiv.innerHTML += `
       <div class="result-block">
-        <b>${item["部番"]}（${item["工程"] || ""}）</b>
+        <b>${item["部番"]}（${item["部署"] || ""}）</b>
         <div class="table-wrap">
           <table>
             <tr>${headerCells}</tr>
@@ -202,6 +202,10 @@ function searchData() {
 // Enterキーで検索
 document.getElementById("search").addEventListener("keydown", e => {
   if (e.key === "Enter") searchData();
+});
+</script>
+</body>
+</html>
 });
 </script>
 </body>
