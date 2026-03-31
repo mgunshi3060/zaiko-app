@@ -3,66 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <title>工程検索</title>
-
 <style>
 body { font-family: sans-serif; background:#f5f5f5; padding:10px;}
-
 .search-box {
   display:flex;
   justify-content:center;
   gap:5px;
   margin-bottom:15px;
 }
-
 .search-box input {
   width:250px;
   padding:10px;
   font-size:16px;
 }
-
 .search-box button {
   padding:10px 20px;
   font-size:16px;
 }
-
 table {
   width:100%;
   border-collapse:collapse;
   background:white;
 }
-
 th,td {
   border:1px solid #ccc;
   padding:6px;
   text-align:center;
   font-size:12px;
 }
-
 th {
   background:#333;
   color:white;
 }
 </style>
 </head>
-
 <body>
-
 <h2 style="text-align:center;">工程検索</h2>
-
 <div class="search-box">
   <input type="text" id="search" placeholder="例：408">
   <button onclick="search()">検索</button>
 </div>
-
 <table id="result"></table>
-
 <script>
 let masterData = [];
+let allDates = []; // ★ 全データから収集した日付列を保持
 
 fetch("schedule.json")
 .then(res => res.json())
 .then(data => {
     masterData = data;
+    allDates = getAllDates(data); // ★ 全データから日付を収集
     render(data);
 });
 
@@ -71,74 +61,67 @@ function clean(val){
     return val;
 }
 
-// ▼ここが修正ポイント
-function getDates(list){
+// ★ 全レコードを走査して日付キーを収集（順序を保持）
+function getAllDates(list){
+    const seen = new Set();
+    const result = [];
     for(let item of list){
-        const keys = Object.keys(item.日付 || {});
-        if(keys.length > 0){
-            return keys;
+        const keys = Object.keys(item["日付"] || {});
+        for(let k of keys){
+            if(!seen.has(k)){
+                seen.add(k);
+                result.push(k);
+            }
         }
     }
-    return [];
+    return result;
 }
 
 function render(list){
     const table = document.getElementById("result");
-
     if(list.length === 0){
-        table.innerHTML = "データなし";
+        table.innerHTML = "<tr><td colspan='100'>データなし</td></tr>";
         return;
     }
 
-    const dates = getDates(list); // ←修正
-
     let html = "<tr>";
     html += "<th>親部番＆中間</th><th>ホトム部番</th><th>部署</th><th>部番</th>";
-    dates.forEach(d => html += `<th>${d}</th>`);
+    allDates.forEach(d => html += `<th>${d}</th>`);
     html += "</tr>";
 
     list.forEach(item => {
         html += "<tr>";
-
         html += `<td>${clean(item["親部番＆中間"])}</td>`;
         html += `<td>${clean(item["ホトム部番"])}</td>`;
         html += `<td>${clean(item["部署"])}</td>`;
         html += `<td>${clean(item["部番"])}</td>`;
-
-        dates.forEach(d => {
-            html += `<td>${item["日付"][d] ?? ""}</td>`;
+        allDates.forEach(d => {
+            const val = (item["日付"] || {})[d];
+            html += `<td>${val !== undefined ? val : ""}</td>`;
         });
-
         html += "</tr>";
     });
 
     table.innerHTML = html;
 }
 
-// あいまい検索
+// ★ 親部番＆中間 でのあいまい検索
 function search(){
     const key = document.getElementById("search").value.trim();
-
     if(key === ""){
         render(masterData);
         return;
     }
-
     const filtered = masterData.filter(item =>
-        String(item["親部番＆中間"] || "")
-            .includes(key)
+        String(item["親部番＆中間"] || "").includes(key)
     );
-
     render(filtered);
 }
 
-// Enter対応
+// Enter キー対応
 document.getElementById("search").addEventListener("keypress", function(e){
-    if(e.key === "Enter"){
-        search();
-    }
+    if(e.key === "Enter") search();
 });
 </script>
-
 </body>
 </html>
