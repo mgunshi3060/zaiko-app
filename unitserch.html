@@ -2,7 +2,9 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <title>結合データビューア</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
@@ -16,541 +18,612 @@
     --text: #e6edf3;
     --text-muted: #7d8590;
     --text-dim: #484f58;
-    --highlight: rgba(0,212,170,0.12);
     --row-hover: rgba(255,255,255,0.04);
-    --header-bg: #0d1117;
+    --header-h: 56px;
+    --status-h: 36px;
+    --pager-h: 52px;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-  body {
+  html, body {
+    height: 100%;
     background: var(--bg);
     color: var(--text);
     font-family: 'Noto Sans JP', sans-serif;
     font-weight: 300;
-    min-height: 100vh;
+    overscroll-behavior: none;
   }
 
-  /* ─── ヘッダー ─── */
+  /* ══ ヘッダー ══ */
   .header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--header-h);
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 16px 24px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    gap: 10px;
+    padding: 0 12px;
+    z-index: 200;
   }
 
-  .header-title {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .header-title span {
+  .logo {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
     color: var(--accent);
+    white-space: nowrap;
+    display: none;
   }
+  @media (min-width: 480px) { .logo { display: block; } }
 
-  /* ─── 検索エリア ─── */
   .search-wrap {
     flex: 1;
     position: relative;
-    max-width: 480px;
+    min-width: 0;
   }
 
   .search-icon {
     position: absolute;
-    left: 12px;
-    top: 50%;
+    left: 11px; top: 50%;
     transform: translateY(-50%);
-    color: var(--text-dim);
     font-size: 14px;
     pointer-events: none;
+    color: var(--text-dim);
   }
 
   #searchInput {
     width: 100%;
+    height: 40px;
     background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
     color: var(--text);
     font-family: 'Share Tech Mono', monospace;
-    font-size: 13px;
-    padding: 8px 12px 8px 36px;
+    font-size: 14px;
+    padding: 0 36px 0 36px;
     outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none;
   }
-
   #searchInput:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(0,212,170,0.15);
+    box-shadow: 0 0 0 3px rgba(0,212,170,.15);
+  }
+  #searchInput::placeholder { color: var(--text-dim); font-size: 13px; }
+
+  #clearBtn {
+    position: absolute;
+    right: 8px; top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    display: none;
+    line-height: 1;
+  }
+  #clearBtn.visible { display: block; }
+
+  .file-btn {
+    flex-shrink: 0;
+    height: 40px;
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 0 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity .2s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .file-btn:active { opacity: 0.75; }
+  #fileInput { display: none; }
+
+  /* ══ プログレスバー ══ */
+  #progressWrap {
+    position: fixed;
+    top: var(--header-h);
+    left: 0; right: 0;
+    height: 3px;
+    background: var(--border);
+    z-index: 300;
+    display: none;
+  }
+  #progressBar {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width .15s;
   }
 
-  #searchInput::placeholder { color: var(--text-dim); }
-
-  /* ─── ステータスバー ─── */
+  /* ══ ステータスバー ══ */
   .status-bar {
-    padding: 8px 24px;
-    background: var(--header-bg);
+    position: fixed;
+    top: var(--header-h); left: 0; right: 0;
+    height: var(--status-h);
+    background: var(--bg);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 10px;
+    padding: 0 12px;
     font-size: 11px;
-    color: var(--text-muted);
     font-family: 'Share Tech Mono', monospace;
+    color: var(--text-muted);
+    z-index: 190;
+    overflow: hidden;
   }
-
-  .status-count {
-    color: var(--accent);
-    font-weight: 700;
-  }
-
+  .status-bar .cnt { color: var(--accent); font-weight: 700; }
   .status-tag {
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 2px 8px;
+    padding: 1px 7px;
     font-size: 10px;
+    white-space: nowrap;
   }
-
-  .load-state {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  /* ─── ローディング ─── */
   .spinner {
     width: 12px; height: 12px;
     border: 2px solid var(--border);
     border-top-color: var(--accent);
     border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    display: inline-block;
+    animation: spin .7s linear infinite;
+    flex-shrink: 0;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ─── テーブルラッパー ─── */
-  .table-container {
+  /* ══ ドロップゾーン（初期画面） ══ */
+  #dropZone {
+    position: fixed;
+    top: calc(var(--header-h) + var(--status-h));
+    left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 24px;
+    text-align: center;
+  }
+  .drop-icon { font-size: 56px; }
+  .drop-title { font-size: 16px; font-weight: 500; color: var(--text); }
+  .drop-sub {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.8;
+    max-width: 320px;
+  }
+  .drop-sub strong { color: var(--accent2); }
+  .drop-btn {
+    height: 52px;
+    background: var(--accent);
+    color: #0d1117;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 0 32px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: opacity .2s;
+    margin-top: 8px;
+  }
+  .drop-btn:active { opacity: 0.75; }
+
+  /* ══ テーブルエリア ══ */
+  #tableArea {
+    display: none;
+    position: fixed;
+    top: calc(var(--header-h) + var(--status-h));
+    left: 0; right: 0;
+    bottom: var(--pager-h);
     overflow: auto;
-    max-height: calc(100vh - 100px);
+    -webkit-overflow-scrolling: touch;
   }
 
   table {
-    width: 100%;
     border-collapse: collapse;
     font-size: 12px;
+    min-width: 100%;
   }
 
   thead th {
-    background: var(--surface);
-    color: var(--text-muted);
-    font-weight: 500;
-    font-size: 11px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    padding: 10px 12px;
-    border-bottom: 2px solid var(--border);
-    white-space: nowrap;
     position: sticky;
     top: 0;
     z-index: 10;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 9px 10px;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+    user-select: none;
   }
-
   thead th:first-child { border-left: 3px solid var(--accent); }
 
-  tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background 0.1s;
+  tbody tr { border-bottom: 1px solid var(--border); }
+  @media (hover: hover) {
+    tbody tr:hover { background: var(--row-hover); }
   }
 
-  tbody tr:hover { background: var(--row-hover); }
-
   tbody td {
-    padding: 8px 12px;
-    color: var(--text);
+    padding: 9px 10px;
     white-space: nowrap;
     font-family: 'Share Tech Mono', monospace;
     font-size: 11px;
+    color: var(--text);
   }
 
-  /* ─── セル装飾 ─── */
-  .cell-oyabuban {
-    color: var(--accent);
-    font-weight: 500;
-  }
+  .c-oya   { color: var(--accent); font-weight: 500; }
+  .c-busho { color: var(--accent2); }
+  .c-buban { color: #a5b4fc; }
+  .c-nan   { color: var(--text-dim); font-size: 10px; }
+  .c-date  { text-align: right; min-width: 54px; }
+  .c-dval  { color: #fbbf24; }
+  .c-dzero { color: var(--text-dim); }
 
-  .cell-busho {
-    color: var(--accent2);
-  }
-
-  .cell-buban {
-    color: #a5b4fc;
-  }
-
-  .cell-nan {
-    color: var(--text-dim);
-    font-size: 10px;
-  }
-
-  .cell-date {
-    text-align: right;
-    min-width: 56px;
-  }
-
-  .cell-date.has-value {
-    color: #fbbf24;
-  }
-
-  .cell-date.zero-value {
-    color: var(--text-dim);
-  }
-
-  /* ─── ハイライト ─── */
   mark {
-    background: rgba(0,212,170,0.3);
+    background: rgba(0,212,170,.28);
     color: var(--accent);
     border-radius: 2px;
     padding: 0 1px;
   }
 
-  /* ─── 空状態 ─── */
-  .empty-state {
+  .empty-row td {
     text-align: center;
-    padding: 60px 20px;
-    color: var(--text-muted);
-  }
-
-  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
-  .empty-state p { font-size: 13px; }
-
-  /* ─── 仮想スクロール ─── */
-  .virtual-spacer-top,
-  .virtual-spacer-bottom {
-    display: block;
-  }
-
-  /* ─── ファイル読み込み ─── */
-  .drop-zone {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: calc(100vh - 60px);
-    gap: 16px;
-    color: var(--text-muted);
-  }
-
-  .drop-zone .icon { font-size: 48px; }
-  .drop-zone p { font-size: 14px; }
-
-  .file-btn {
-    background: var(--accent);
-    color: var(--bg);
-    border: none;
-    border-radius: 6px;
-    padding: 10px 24px;
-    font-family: 'Noto Sans JP', sans-serif;
+    padding: 48px 20px;
+    color: var(--text-dim);
     font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: opacity 0.2s;
+    font-family: 'Noto Sans JP', sans-serif;
   }
 
-  .file-btn:hover { opacity: 0.85; }
-
-  #fileInput { display: none; }
-
-  /* ─── ページング ─── */
-  .pagination {
-    position: sticky;
-    bottom: 0;
+  /* ══ ページネーション ══ */
+  .pager {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: var(--pager-h);
     background: var(--surface);
     border-top: 1px solid var(--border);
-    padding: 8px 24px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    z-index: 200;
+  }
+  .pager.visible { display: flex; }
+
+  .pg-btn {
+    height: 38px;
+    min-width: 68px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-size: 12px;
+    justify-content: center;
+    -webkit-appearance: none;
+  }
+  .pg-btn:active  { border-color: var(--accent); color: var(--accent); }
+  @media (hover: hover) {
+    .pg-btn:hover { border-color: var(--accent); color: var(--accent); }
+  }
+  .pg-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .pg-info {
+    flex: 1;
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
     color: var(--text-muted);
-    z-index: 10;
   }
+  .pg-info span { color: var(--accent); font-weight: 700; }
 
-  .page-btn {
+  .pg-size {
     background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
     color: var(--text);
-    padding: 4px 12px;
-    font-size: 11px;
-    cursor: pointer;
-    font-family: 'Share Tech Mono', monospace;
-    transition: border-color 0.2s, color 0.2s;
-  }
-
-  .page-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  .page-info { font-family: 'Share Tech Mono', monospace; }
-  .page-info span { color: var(--accent); }
-
-  /* ─── 行数セレクト ─── */
-  select {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    color: var(--text);
-    padding: 4px 8px;
     font-size: 11px;
     font-family: 'Share Tech Mono', monospace;
+    padding: 0 8px;
+    height: 38px;
     cursor: pointer;
     outline: none;
+    -webkit-appearance: none;
+    appearance: none;
   }
-
-  select:focus { border-color: var(--accent); }
+  .pg-size:focus { border-color: var(--accent); }
 </style>
 </head>
 <body>
 
 <!-- ヘッダー -->
 <div class="header">
-  <div class="header-title">結合データ <span>Viewer</span></div>
+  <span class="logo">VIEWER</span>
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
-    <input type="text" id="searchInput" placeholder="親部番＆中間 をあいまい検索..." autocomplete="off" />
+    <input type="text" id="searchInput"
+      placeholder="親部番＆中間 をあいまい検索..."
+      autocomplete="off" autocorrect="off"
+      autocapitalize="off" spellcheck="false" />
+    <button id="clearBtn" onclick="clearSearch()" aria-label="クリア">✕</button>
   </div>
-  <button class="file-btn" onclick="document.getElementById('fileInput').click()">📂 JSONを開く</button>
-  <input type="file" id="fileInput" accept=".json" />
+
 </div>
+
+<!-- プログレスバー -->
+<div id="progressWrap"><div id="progressBar"></div></div>
 
 <!-- ステータスバー -->
-<div class="status-bar" id="statusBar">
-  <div class="load-state" id="loadState">
-    <span>JSONファイルを読み込んでください</span>
-  </div>
+<div class="status-bar">
+  <span id="statusMsg">JSONファイルを読み込んでください</span>
 </div>
 
-<!-- メインコンテンツ -->
-<div id="mainContent">
-  <div class="drop-zone">
-    <div class="icon">📋</div>
-    <p>ketsugou.json を読み込んでください</p>
-    <button class="file-btn" onclick="document.getElementById('fileInput').click()">📂 ファイルを選択</button>
-    <input type="file" id="fileInput2" accept=".json" style="display:none" />
-  </div>
+<!-- 初期画面 -->
+<div id="dropZone">
+  <div class="drop-icon">📋</div>
+  <div class="drop-title">結合データビューア</div>
+  <div class="drop-sub" id="dropSub">データを読み込んでいます...</div>
+</div>
+
+<!-- テーブルエリア -->
+<div id="tableArea">
+  <table>
+    <thead id="tableHead"></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<!-- ページネーション -->
+<div class="pager" id="pager">
+  <button class="pg-btn" id="prevBtn" onclick="changePage(-1)">◀ 前へ</button>
+  <div class="pg-info" id="pageInfo"></div>
+  <button class="pg-btn" id="nextBtn" onclick="次へ">次へ ▶</button>
+  <select class="pg-size" id="pageSizeSelect" onchange="changePageSize(this.value)">
+    <option value="50">50行</option>
+    <option value="100" selected>100行</option>
+    <option value="200">200行</option>
+    <option value="500">500行</option>
+  </select>
 </div>
 
 <script>
-let allData = [];
+'use strict';
+
+let allData      = [];
 let filteredData = [];
-let dateColumns = [];
-let currentPage = 0;
-let pageSize = 100;
-let searchQuery = '';
+let dateColumns  = [];
+let currentPage  = 0;
+let pageSize     = 100;
+let searchQuery  = '';
 let debounceTimer;
+let pgTimer;
 
-// ファイル読み込み
-document.getElementById('fileInput').addEventListener('change', handleFile);
-document.getElementById('fileInput2').addEventListener('change', handleFile);
 
-function handleFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  setLoading(true, `読み込み中: ${file.name}`);
-  const reader = new FileReader();
-  reader.onload = (ev) => {
+
+/* ── 自動fetch読み込み ── */
+(async function autoLoad() {
+  setProgress(true);
+  setStatus('<span class="spinner"></span>&nbsp;データ読み込み中...');
+  try {
+    const res = await fetch('./ketsugou.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    parseJSON(json);
+  } catch(err) {
+    setProgress(false);
+    document.getElementById('dropSub').innerHTML =
+      `⚠️ 自動読み込み失敗: ${err.message}<br>ketsugou.json と同じフォルダに置いてください`;
+    setStatus('❌ 読み込み失敗');
+  }
+})();
+
+function parseJSON(json) {
+  // UI をブロックしないよう次フレームで処理
+  setTimeout(() => {
     try {
-      const json = JSON.parse(ev.target.result);
-      allData = json;
-      processData();
+      const json2 = Array.isArray(json) ? json : JSON.parse(json);
+      if (!Array.isArray(json2)) throw new Error('配列形式のJSONが必要です');
+      allData = json2;
+      buildDateColumns();
+      searchQuery = '';
+      document.getElementById('searchInput').value = '';
+      document.getElementById('clearBtn').classList.remove('visible');
+      applyFilter();
+      setProgress(false);
+document.getElementById('dropZone').style.display = 'none';
+      document.getElementById('tableArea').style.display = 'block';
+      document.getElementById('pager').classList.add('visible');
     } catch(err) {
-      setLoading(false);
-      alert('JSONの解析に失敗しました: ' + err.message);
+      setProgress(false);
+      setStatus('❌ 解析エラー: ' + err.message);
+      alert('JSONの解析に失敗しました:\n' + err.message);
     }
-  };
-  reader.readAsText(file, 'utf-8');
+  }, 0);
 }
 
-function processData() {
-  // 日付カラム収集
-  const dateSet = new Set();
+function buildDateColumns() {
+  const set = new Set();
   for (const row of allData) {
     if (row['日付'] && typeof row['日付'] === 'object') {
-      for (const k of Object.keys(row['日付'])) dateSet.add(k);
+      for (const k of Object.keys(row['日付'])) set.add(k);
     }
   }
-  dateColumns = Array.from(dateSet);
+  dateColumns = Array.from(set);
 
-  filteredData = allData;
-  currentPage = 0;
-  renderTable();
-  setLoading(false);
+  // ヘッダー（一度だけ構築）
+  const fixed = ['親部番＆中間','ホトム部番','部署','部番'];
+  let h = '<tr>';
+  for (const c of fixed) h += `<th>${esc(c)}</th>`;
+  for (const d of dateColumns) h += `<th class="c-date">${esc(d)}</th>`;
+  h += '</tr>';
+  document.getElementById('tableHead').innerHTML = h;
 }
 
-function setLoading(loading, msg) {
-  const el = document.getElementById('loadState');
-  if (loading) {
-    el.innerHTML = `<span class="spinner"></span><span>${msg || '処理中...'}</span>`;
-  } else {
-    updateStatus();
-  }
-}
-
-function updateStatus() {
-  const el = document.getElementById('statusBar');
-  el.innerHTML = `
-    <span>総件数: <span class="status-count">${allData.length.toLocaleString()}</span></span>
-    <span>|</span>
-    <span>表示中: <span class="status-count">${filteredData.length.toLocaleString()}</span></span>
-    ${searchQuery ? `<span class="status-tag">🔍 "${searchQuery}"</span>` : ''}
-    ${dateColumns.length > 0 ? `<span class="status-tag">📅 ${dateColumns.length}日分</span>` : ''}
-  `;
-}
-
-// 検索
-document.getElementById('searchInput').addEventListener('input', (e) => {
+/* ── 検索 ── */
+document.getElementById('searchInput').addEventListener('input', function() {
+  document.getElementById('clearBtn').classList.toggle('visible', this.value.length > 0);
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    searchQuery = e.target.value.trim();
+    searchQuery = this.value.trim();
+    currentPage = 0;
     applyFilter();
-  }, 150);
+  }, 200);
 });
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearBtn').classList.remove('visible');
+  searchQuery = '';
+  currentPage = 0;
+  applyFilter();
+}
 
 function applyFilter() {
   if (!searchQuery) {
     filteredData = allData;
   } else {
     const q = searchQuery.toLowerCase();
-    filteredData = allData.filter(row => {
-      const v = (row['親部番＆中間'] || '').toLowerCase();
-      return v.includes(q);
-    });
+    filteredData = allData.filter(r =>
+      (r['親部番＆中間'] || '').toLowerCase().includes(q)
+    );
   }
-  currentPage = 0;
-  renderTable();
+  renderPage();
   updateStatus();
 }
 
-// ハイライト
-function highlight(text, query) {
-  if (!query || !text) return escHtml(text || '');
-  const escaped = escHtml(text);
-  const qEsc = escHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return escaped.replace(new RegExp(qEsc, 'gi'), m => `<mark>${m}</mark>`);
-}
-
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
-
-function renderTable() {
+/* ── テーブル描画 ── */
+function renderPage() {
   const start = currentPage * pageSize;
-  const end = Math.min(start + pageSize, filteredData.length);
-  const pageData = filteredData.slice(start, end);
-  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const end   = Math.min(start + pageSize, filteredData.length);
+  const rows  = filteredData.slice(start, end);
+  const buf   = [];
 
-  const fixedCols = ['親部番＆中間', 'ホトム部番', '部署', '部番'];
-
-  // ヘッダー構築
-  let thead = '<thead><tr>';
-  for (const col of fixedCols) {
-    thead += `<th>${escHtml(col)}</th>`;
-  }
-  for (const d of dateColumns) {
-    thead += `<th class="cell-date">${escHtml(d)}</th>`;
-  }
-  thead += '</tr></thead>';
-
-  // ボディ構築
-  let tbody = '<tbody>';
-  if (pageData.length === 0) {
-    const colSpan = fixedCols.length + dateColumns.length;
-    tbody += `<tr><td colspan="${colSpan}" style="text-align:center;padding:40px;color:var(--text-dim)">
-      該当するデータが見つかりません
-    </td></tr>`;
+  if (rows.length === 0) {
+    buf.push(`<tr class="empty-row"><td colspan="${4 + dateColumns.length}">該当データがありません</td></tr>`);
   } else {
-    for (const row of pageData) {
-      tbody += '<tr>';
-      // 親部番
-      const oyaVal = row['親部番＆中間'] || '';
-      tbody += `<td class="cell-oyabuban">${highlight(oyaVal, searchQuery)}</td>`;
-      // ホトム部番
-      tbody += `<td>${escHtml(row['ホトム部番'] || '')}</td>`;
-      // 部署
-      const busho = row['部署'];
-      if (!busho || busho === 'nan') {
-        tbody += `<td class="cell-nan">—</td>`;
-      } else {
-        tbody += `<td class="cell-busho">${escHtml(busho)}</td>`;
-      }
-      // 部番
-      const buban = row['部番'];
-      if (!buban || buban === 'nan') {
-        tbody += `<td class="cell-nan">—</td>`;
-      } else {
-        tbody += `<td class="cell-buban">${escHtml(buban)}</td>`;
-      }
-      // 日付列
+    for (const row of rows) {
+      buf.push('<tr>');
+      buf.push(`<td class="c-oya">${hi(row['親部番＆中間'] || '', searchQuery)}</td>`);
+      buf.push(`<td>${esc(row['ホトム部番'] || '')}</td>`);
+      buf.push(nanCell(row['部署'], 'c-busho'));
+      buf.push(nanCell(row['部番'],  'c-buban'));
       const dates = row['日付'] || {};
       for (const d of dateColumns) {
         const v = dates[d];
         if (v === undefined || v === null) {
-          tbody += `<td class="cell-date cell-nan">—</td>`;
+          buf.push('<td class="c-date c-nan">—</td>');
         } else if (v === 0) {
-          tbody += `<td class="cell-date zero-value">0</td>`;
+          buf.push('<td class="c-date c-dzero">0</td>');
         } else {
-          tbody += `<td class="cell-date has-value">${v.toLocaleString()}</td>`;
+          buf.push(`<td class="c-date c-dval">${v.toLocaleString()}</td>`);
         }
       }
-      tbody += '</tr>';
+      buf.push('</tr>');
     }
   }
-  tbody += '</tbody>';
 
-  // ページネーション
-  const paginationHtml = `
-    <div class="pagination">
-      <button class="page-btn" id="prevBtn" onclick="changePage(-1)" ${currentPage === 0 ? 'disabled' : ''}>◀ 前へ</button>
-      <span class="page-info">ページ <span>${currentPage + 1}</span> / <span>${totalPages || 1}</span></span>
-      <button class="page-btn" id="nextBtn" onclick="changePage(1)" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>次へ ▶</button>
-      <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-        <span style="color:var(--text-dim)">表示行数:</span>
-        <select onchange="changePageSize(this.value)">
-          ${[50,100,200,500].map(n => `<option value="${n}" ${n===pageSize?'selected':''}>${n}行</option>`).join('')}
-        </select>
-      </span>
-    </div>
-  `;
+  document.getElementById('tableBody').innerHTML = buf.join('');
+  document.getElementById('tableArea').scrollTop = 0;
 
-  document.getElementById('mainContent').innerHTML = `
-    <div class="table-container">
-      <table>${thead}${tbody}</table>
-    </div>
-    ${paginationHtml}
-  `;
+  // ページャー
+  const total = Math.ceil(filteredData.length / pageSize) || 1;
+  document.getElementById('pageInfo').innerHTML =
+    `<span>${currentPage + 1}</span> / <span>${total}</span>`;
+  document.getElementById('prevBtn').disabled = currentPage === 0;
+  document.getElementById('nextBtn').disabled = currentPage >= total - 1;
 }
 
+function nanCell(v, cls) {
+  if (!v || v === 'nan') return '<td class="c-nan">—</td>';
+  return `<td class="${cls}">${esc(v)}</td>`;
+}
+
+/* ── ページング ── */
 function changePage(dir) {
-  const totalPages = Math.ceil(filteredData.length / pageSize);
-  currentPage = Math.max(0, Math.min(currentPage + dir, totalPages - 1));
-  renderTable();
-  document.querySelector('.table-container').scrollTop = 0;
+  const total = Math.ceil(filteredData.length / pageSize);
+  currentPage = Math.max(0, Math.min(currentPage + dir, total - 1));
+  renderPage();
 }
 
 function changePageSize(val) {
-  pageSize = parseInt(val);
+  pageSize    = parseInt(val);
   currentPage = 0;
-  renderTable();
+  renderPage();
+}
+
+// 次へボタンのonclick修正
+document.getElementById('nextBtn').onclick = () => changePage(1);
+
+/* ── ステータス ── */
+function updateStatus() {
+  let h = `総件数: <span class="cnt">${allData.length.toLocaleString()}</span>`;
+  h += `&nbsp;&nbsp;表示: <span class="cnt">${filteredData.length.toLocaleString()}</span>`;
+  if (searchQuery) h += `&nbsp;<span class="status-tag">🔍 "${esc(searchQuery)}"</span>`;
+  if (dateColumns.length) h += `&nbsp;<span class="status-tag">📅 ${dateColumns.length}日</span>`;
+  setStatus(h);
+}
+
+function setStatus(html) {
+  document.getElementById('statusMsg').innerHTML = html;
+}
+
+/* ── プログレスバー ── */
+function setProgress(show) {
+  const wrap = document.getElementById('progressWrap');
+  const bar  = document.getElementById('progressBar');
+  clearInterval(pgTimer);
+  if (show) {
+    wrap.style.display = 'block';
+    let w = 5;
+    bar.style.width = w + '%';
+    pgTimer = setInterval(() => {
+      w = Math.min(w + Math.random() * 12, 88);
+      bar.style.width = w + '%';
+    }, 150);
+  } else {
+    bar.style.width = '100%';
+    setTimeout(() => {
+      wrap.style.display = 'none';
+      bar.style.width = '0%';
+    }, 350);
+  }
+}
+
+/* ── ユーティリティ ── */
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function hi(text, query) {
+  if (!query) return esc(text);
+  const e = esc(text);
+  const q = esc(query).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return e.replace(new RegExp(q,'gi'), m => `<mark>${m}</mark>`);
 }
 </script>
 </body>
