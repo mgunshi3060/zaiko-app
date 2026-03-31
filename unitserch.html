@@ -2,88 +2,143 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>親部番検索（あいまい）</title>
+<title>工程検索</title>
 
 <style>
-body { font-family: sans-serif; background:#f5f5f5; padding:10px;}
-input { width:100%; padding:10px; margin-bottom:10px; font-size:16px;}
-table { width:100%; border-collapse:collapse; background:white;}
-th,td { border:1px solid #ccc; padding:6px; text-align:center; font-size:12px;}
-th { background:#333; color:white;}
+body {
+  font-family: sans-serif;
+  background: #f5f5f5;
+  padding: 10px;
+}
+
+/* 検索UI */
+.search-box {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 15px;
+}
+
+.search-box input {
+  width: 250px;
+  max-width: 80%;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.search-box button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* テーブル */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  text-align: center;
+  font-size: 12px;
+}
+
+th {
+  background: #333;
+  color: white;
+}
 </style>
 </head>
 
 <body>
 
-<h2>親部番＆中間 あいまい検索</h2>
+<h2 style="text-align:center;">工程検索</h2>
 
-<input type="text" id="search" placeholder="例：408 / 430">
+<div class="search-box">
+  <input type="text" id="search" placeholder="例：408 / 溶接">
+  <button onclick="search()">検索</button>
+</div>
 
 <table id="result"></table>
 
 <script>
+let masterData = [];
+
+// JSON読み込み
 fetch("schedule.json")
 .then(res => res.json())
 .then(data => {
+    masterData = data;
+    render(data);
+});
 
+// nan対策
+function clean(val){
+    if(!val || val === "nan") return "";
+    return val;
+}
+
+// 表示
+function render(list){
     const table = document.getElementById("result");
-    const input = document.getElementById("search");
 
-    function render(list){
-        if(list.length === 0){
-            table.innerHTML = "データなし";
-            return;
-        }
+    if(list.length === 0){
+        table.innerHTML = "データなし";
+        return;
+    }
 
-        // 日付列取得（1件目基準）
-        const dates = Object.keys(list[0].日付);
+    const dates = Object.keys(list[0].日付);
 
-        let html = "<tr>";
-        html += "<th>親部番＆中間</th><th>ホトム部番</th><th>部署</th><th>部番</th>";
-        dates.forEach(d => html += `<th>${d}</th>`);
-        html += "</tr>";
+    let html = "<tr>";
+    html += "<th>親部番＆中間</th><th>ホトム部番</th><th>部署</th><th>部番</th>";
+    dates.forEach(d => html += `<th>${d}</th>`);
+    html += "</tr>";
 
-        list.forEach(item => {
-            html += "<tr>";
+    list.forEach(item => {
+        html += "<tr>";
 
-            html += `<td>${clean(item["親部番＆中間"])}</td>`;
-            html += `<td>${clean(item["ホトム部番"])}</td>`;
-            html += `<td>${clean(item["部署"])}</td>`;
-            html += `<td>${clean(item["部番"])}</td>`;
+        html += `<td>${clean(item["親部番＆中間"])}</td>`;
+        html += `<td>${clean(item["ホトム部番"])}</td>`;
+        html += `<td>${clean(item["部署"])}</td>`;
+        html += `<td>${clean(item["部番"])}</td>`;
 
-            dates.forEach(d => {
-                html += `<td>${item["日付"][d] ?? ""}</td>`;
-            });
-
-            html += "</tr>";
+        dates.forEach(d => {
+            html += `<td>${item["日付"][d] ?? ""}</td>`;
         });
 
-        table.innerHTML = html;
-    }
-
-    function clean(val){
-        if(!val || val === "nan") return "";
-        return val;
-    }
-
-    // 初期表示（全件）
-    render(data);
-
-    input.addEventListener("input", () => {
-        const key = input.value.trim();
-
-        if(key === ""){
-            render(data);
-            return;
-        }
-
-        const filtered = data.filter(item =>
-            (item["親部番＆中間"] || "").includes(key)
-        );
-
-        render(filtered);
+        html += "</tr>";
     });
 
+    table.innerHTML = html;
+}
+
+// 検索処理（あいまい＋全項目）
+function search(){
+    const key = document.getElementById("search").value.trim();
+
+    if(key === ""){
+        render(masterData);
+        return;
+    }
+
+    const filtered = masterData.filter(item =>
+        (item["親部番＆中間"] || "").includes(key) ||
+        (item["ホトム部番"] || "").includes(key) ||
+        (item["部署"] || "").includes(key) ||
+        (item["部番"] || "").includes(key)
+    );
+
+    render(filtered);
+}
+
+// Enterキー対応
+document.getElementById("search").addEventListener("keypress", function(e){
+    if(e.key === "Enter"){
+        search();
+    }
 });
 </script>
 
