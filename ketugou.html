@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>在庫検索</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  padding: 8px;
+  background: #f5f5f5;
+}
+
+h2 {
+  text-align: center;
+  margin: 5px;
+}
+
+/* 検索 */
+.search-box {
+  display: flex;
+  gap: 5px;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+}
+
+button {
+  padding: 10px;
+  font-size: 14px;
+}
+
+/* カード */
+.card {
+  background: white;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+/* 横スクロール */
+.table-wrap {
+  overflow-x: auto;
+}
+
+/* テーブル */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 600px;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* 土日色 */
+.sat {
+  background-color: #ddeeff;
+}
+
+.sun {
+  background-color: #ffdede;
+}
+</style>
+</head>
+
+<body>
+
+<h2>在庫検索</h2>
+
+<div class="search-box">
+  <input type="text" id="search" placeholder="部番を入力">
+  <button onclick="searchData()">検索</button>
+</div>
+
+<div id="result"></div>
+
+<script>
+let data = [];
+
+// JSON読み込み（ファイル名変更済）
+fetch("ketugou.json")
+  .then(res => res.json())
+  .then(json => {
+    data = json;
+    console.log("データ件数:", data.length);
+  });
+
+// 正規化（検索ブレ防止）
+const normalize = str =>
+  str.replace(/\s/g, "").toLowerCase();
+
+function searchData() {
+
+  const keyword = normalize(
+    document.getElementById("search").value
+  );
+
+  const result = document.getElementById("result");
+  result.innerHTML = "";
+
+  const filtered = data.filter(item =>
+    normalize(item["部番"]).includes(keyword)
+  );
+
+  if (filtered.length === 0) {
+    result.innerHTML = "該当なし";
+    return;
+  }
+
+  filtered.forEach(item => {
+
+    let html = `<div class="card">`;
+
+    // タイトル（1行にまとめる）
+    html += `<b>${item["部番"]}（${item["部署"]}）</b>`;
+
+    html += `<div class="table-wrap"><table><tr>`;
+
+    const dates = Object.keys(item["在庫"]);
+
+    // 日付ヘッダー
+    dates.forEach(d => {
+      let cls = "";
+
+      if (d.includes("土")) cls = "sat";
+      if (d.includes("日")) cls = "sun";
+
+      html += `<th class="${cls}">${d}</th>`;
+    });
+
+    html += "</tr><tr>";
+
+    // 在庫データ
+    dates.forEach(d => {
+      let value = item["在庫"][d];
+
+      // マイナスのみ警告表示
+      if (value < 0) {
+        value = `▲${Math.abs(value)}`;
+        html += `<td style="color:red">${value}</td>`;
+      } else {
+        html += `<td>${value}</td>`;
+      }
+    });
+
+    html += "</tr></table></div></div>";
+
+    result.innerHTML += html;
+
+  });
+}
+</script>
+
+</body>
+</html>
