@@ -2,126 +2,556 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>工程検索</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>結合データビューア</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
-body { font-family: sans-serif; background:#f5f5f5; padding:10px;}
-.search-box {
-  display:flex;
-  justify-content:center;
-  gap:5px;
-  margin-bottom:15px;
-}
-.search-box input {
-  width:250px;
-  padding:10px;
-  font-size:16px;
-}
-.search-box button {
-  padding:10px 20px;
-  font-size:16px;
-}
-table {
-  width:100%;
-  border-collapse:collapse;
-  background:white;
-}
-th,td {
-  border:1px solid #ccc;
-  padding:6px;
-  text-align:center;
-  font-size:12px;
-}
-th {
-  background:#333;
-  color:white;
-}
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --accent: #00d4aa;
+    --accent2: #0ea5e9;
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --text-dim: #484f58;
+    --highlight: rgba(0,212,170,0.12);
+    --row-hover: rgba(255,255,255,0.04);
+    --header-bg: #0d1117;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+  }
+
+  /* ─── ヘッダー ─── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .header-title span {
+    color: var(--accent);
+  }
+
+  /* ─── 検索エリア ─── */
+  .search-wrap {
+    flex: 1;
+    position: relative;
+    max-width: 480px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  #searchInput {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    padding: 8px 12px 8px 36px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  #searchInput:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.15);
+  }
+
+  #searchInput::placeholder { color: var(--text-dim); }
+
+  /* ─── ステータスバー ─── */
+  .status-bar {
+    padding: 8px 24px;
+    background: var(--header-bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .status-count {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .status-tag {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+
+  .load-state {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ─── ローディング ─── */
+  .spinner {
+    width: 12px; height: 12px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── テーブルラッパー ─── */
+  .table-container {
+    overflow: auto;
+    max-height: calc(100vh - 100px);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  thead th {
+    background: var(--surface);
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  thead th:first-child { border-left: 3px solid var(--accent); }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+
+  tbody tr:hover { background: var(--row-hover); }
+
+  tbody td {
+    padding: 8px 12px;
+    color: var(--text);
+    white-space: nowrap;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+  }
+
+  /* ─── セル装飾 ─── */
+  .cell-oyabuban {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .cell-busho {
+    color: var(--accent2);
+  }
+
+  .cell-buban {
+    color: #a5b4fc;
+  }
+
+  .cell-nan {
+    color: var(--text-dim);
+    font-size: 10px;
+  }
+
+  .cell-date {
+    text-align: right;
+    min-width: 56px;
+  }
+
+  .cell-date.has-value {
+    color: #fbbf24;
+  }
+
+  .cell-date.zero-value {
+    color: var(--text-dim);
+  }
+
+  /* ─── ハイライト ─── */
+  mark {
+    background: rgba(0,212,170,0.3);
+    color: var(--accent);
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+
+  /* ─── 空状態 ─── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 13px; }
+
+  /* ─── 仮想スクロール ─── */
+  .virtual-spacer-top,
+  .virtual-spacer-bottom {
+    display: block;
+  }
+
+  /* ─── ファイル読み込み ─── */
+  .drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 60px);
+    gap: 16px;
+    color: var(--text-muted);
+  }
+
+  .drop-zone .icon { font-size: 48px; }
+  .drop-zone p { font-size: 14px; }
+
+  .file-btn {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 24px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .file-btn:hover { opacity: 0.85; }
+
+  #fileInput { display: none; }
+
+  /* ─── ページング ─── */
+  .pagination {
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    z-index: 10;
+  }
+
+  .page-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 4px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .page-info { font-family: 'Share Tech Mono', monospace; }
+  .page-info span { color: var(--accent); }
+
+  /* ─── 行数セレクト ─── */
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 4px 8px;
+    font-size: 11px;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: pointer;
+    outline: none;
+  }
+
+  select:focus { border-color: var(--accent); }
 </style>
 </head>
 <body>
-<h2 style="text-align:center;">工程検索</h2>
-<div class="search-box">
-  <input type="text" id="search" placeholder="例：408">
-  <button onclick="search()">検索</button>
+
+<!-- ヘッダー -->
+<div class="header">
+  <div class="header-title">結合データ <span>Viewer</span></div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="親部番＆中間 をあいまい検索..." autocomplete="off" />
+  </div>
+  <button class="file-btn" onclick="document.getElementById('fileInput').click()">📂 JSONを開く</button>
+  <input type="file" id="fileInput" accept=".json" />
 </div>
-<table id="result"></table>
+
+<!-- ステータスバー -->
+<div class="status-bar" id="statusBar">
+  <div class="load-state" id="loadState">
+    <span>JSONファイルを読み込んでください</span>
+  </div>
+</div>
+
+<!-- メインコンテンツ -->
+<div id="mainContent">
+  <div class="drop-zone">
+    <div class="icon">📋</div>
+    <p>ketsugou.json を読み込んでください</p>
+    <button class="file-btn" onclick="document.getElementById('fileInput').click()">📂 ファイルを選択</button>
+    <input type="file" id="fileInput2" accept=".json" style="display:none" />
+  </div>
+</div>
+
 <script>
-let masterData = [];
-let allDates = []; // ★ 全データから収集した日付列を保持
+let allData = [];
+let filteredData = [];
+let dateColumns = [];
+let currentPage = 0;
+let pageSize = 100;
+let searchQuery = '';
+let debounceTimer;
 
-fetch("ketsugou.json")
-.then(res => res.json())
-.then(data => {
-    masterData = data;
-    allDates = getAllDates(data); // ★ 全データから日付を収集
-    render(data);
+// ファイル読み込み
+document.getElementById('fileInput').addEventListener('change', handleFile);
+document.getElementById('fileInput2').addEventListener('change', handleFile);
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  setLoading(true, `読み込み中: ${file.name}`);
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const json = JSON.parse(ev.target.result);
+      allData = json;
+      processData();
+    } catch(err) {
+      setLoading(false);
+      alert('JSONの解析に失敗しました: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function processData() {
+  // 日付カラム収集
+  const dateSet = new Set();
+  for (const row of allData) {
+    if (row['日付'] && typeof row['日付'] === 'object') {
+      for (const k of Object.keys(row['日付'])) dateSet.add(k);
+    }
+  }
+  dateColumns = Array.from(dateSet);
+
+  filteredData = allData;
+  currentPage = 0;
+  renderTable();
+  setLoading(false);
+}
+
+function setLoading(loading, msg) {
+  const el = document.getElementById('loadState');
+  if (loading) {
+    el.innerHTML = `<span class="spinner"></span><span>${msg || '処理中...'}</span>`;
+  } else {
+    updateStatus();
+  }
+}
+
+function updateStatus() {
+  const el = document.getElementById('statusBar');
+  el.innerHTML = `
+    <span>総件数: <span class="status-count">${allData.length.toLocaleString()}</span></span>
+    <span>|</span>
+    <span>表示中: <span class="status-count">${filteredData.length.toLocaleString()}</span></span>
+    ${searchQuery ? `<span class="status-tag">🔍 "${searchQuery}"</span>` : ''}
+    ${dateColumns.length > 0 ? `<span class="status-tag">📅 ${dateColumns.length}日分</span>` : ''}
+  `;
+}
+
+// 検索
+document.getElementById('searchInput').addEventListener('input', (e) => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    searchQuery = e.target.value.trim();
+    applyFilter();
+  }, 150);
 });
 
-function clean(val){
-    if(!val || val === "nan") return "";
-    return val;
-}
-
-// ★ 全レコードを走査して日付キーを収集（順序を保持）
-function getAllDates(list){
-    const seen = new Set();
-    const result = [];
-    for(let item of list){
-        const keys = Object.keys(item["日付"] || {});
-        for(let k of keys){
-            if(!seen.has(k)){
-                seen.add(k);
-                result.push(k);
-            }
-        }
-    }
-    return result;
-}
-
-function render(list){
-    const table = document.getElementById("result");
-    if(list.length === 0){
-        table.innerHTML = "<tr><td colspan='100'>データなし</td></tr>";
-        return;
-    }
-
-    let html = "<tr>";
-    html += "<th>親部番＆中間</th><th>ホトム部番</th><th>部署</th><th>部番</th>";
-    allDates.forEach(d => html += `<th>${d}</th>`);
-    html += "</tr>";
-
-    list.forEach(item => {
-        html += "<tr>";
-        html += `<td>${clean(item["親部番＆中間"])}</td>`;
-        html += `<td>${clean(item["ホトム部番"])}</td>`;
-        html += `<td>${clean(item["部署"])}</td>`;
-        html += `<td>${clean(item["部番"])}</td>`;
-        allDates.forEach(d => {
-            const val = (item["日付"] || {})[d];
-            html += `<td>${val !== undefined ? val : ""}</td>`;
-        });
-        html += "</tr>";
+function applyFilter() {
+  if (!searchQuery) {
+    filteredData = allData;
+  } else {
+    const q = searchQuery.toLowerCase();
+    filteredData = allData.filter(row => {
+      const v = (row['親部番＆中間'] || '').toLowerCase();
+      return v.includes(q);
     });
-
-    table.innerHTML = html;
+  }
+  currentPage = 0;
+  renderTable();
+  updateStatus();
 }
 
-// ★ 親部番＆中間 でのあいまい検索
-function search(){
-    const key = document.getElementById("search").value.trim();
-    if(key === ""){
-        render(masterData);
-        return;
+// ハイライト
+function highlight(text, query) {
+  if (!query || !text) return escHtml(text || '');
+  const escaped = escHtml(text);
+  const qEsc = escHtml(query).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escaped.replace(new RegExp(qEsc, 'gi'), m => `<mark>${m}</mark>`);
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function renderTable() {
+  const start = currentPage * pageSize;
+  const end = Math.min(start + pageSize, filteredData.length);
+  const pageData = filteredData.slice(start, end);
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+
+  const fixedCols = ['親部番＆中間', 'ホトム部番', '部署', '部番'];
+
+  // ヘッダー構築
+  let thead = '<thead><tr>';
+  for (const col of fixedCols) {
+    thead += `<th>${escHtml(col)}</th>`;
+  }
+  for (const d of dateColumns) {
+    thead += `<th class="cell-date">${escHtml(d)}</th>`;
+  }
+  thead += '</tr></thead>';
+
+  // ボディ構築
+  let tbody = '<tbody>';
+  if (pageData.length === 0) {
+    const colSpan = fixedCols.length + dateColumns.length;
+    tbody += `<tr><td colspan="${colSpan}" style="text-align:center;padding:40px;color:var(--text-dim)">
+      該当するデータが見つかりません
+    </td></tr>`;
+  } else {
+    for (const row of pageData) {
+      tbody += '<tr>';
+      // 親部番
+      const oyaVal = row['親部番＆中間'] || '';
+      tbody += `<td class="cell-oyabuban">${highlight(oyaVal, searchQuery)}</td>`;
+      // ホトム部番
+      tbody += `<td>${escHtml(row['ホトム部番'] || '')}</td>`;
+      // 部署
+      const busho = row['部署'];
+      if (!busho || busho === 'nan') {
+        tbody += `<td class="cell-nan">—</td>`;
+      } else {
+        tbody += `<td class="cell-busho">${escHtml(busho)}</td>`;
+      }
+      // 部番
+      const buban = row['部番'];
+      if (!buban || buban === 'nan') {
+        tbody += `<td class="cell-nan">—</td>`;
+      } else {
+        tbody += `<td class="cell-buban">${escHtml(buban)}</td>`;
+      }
+      // 日付列
+      const dates = row['日付'] || {};
+      for (const d of dateColumns) {
+        const v = dates[d];
+        if (v === undefined || v === null) {
+          tbody += `<td class="cell-date cell-nan">—</td>`;
+        } else if (v === 0) {
+          tbody += `<td class="cell-date zero-value">0</td>`;
+        } else {
+          tbody += `<td class="cell-date has-value">${v.toLocaleString()}</td>`;
+        }
+      }
+      tbody += '</tr>';
     }
-    const filtered = masterData.filter(item =>
-        String(item["親部番＆中間"] || "").includes(key)
-    );
-    render(filtered);
+  }
+  tbody += '</tbody>';
+
+  // ページネーション
+  const paginationHtml = `
+    <div class="pagination">
+      <button class="page-btn" id="prevBtn" onclick="changePage(-1)" ${currentPage === 0 ? 'disabled' : ''}>◀ 前へ</button>
+      <span class="page-info">ページ <span>${currentPage + 1}</span> / <span>${totalPages || 1}</span></span>
+      <button class="page-btn" id="nextBtn" onclick="changePage(1)" ${currentPage >= totalPages - 1 ? 'disabled' : ''}>次へ ▶</button>
+      <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+        <span style="color:var(--text-dim)">表示行数:</span>
+        <select onchange="changePageSize(this.value)">
+          ${[50,100,200,500].map(n => `<option value="${n}" ${n===pageSize?'selected':''}>${n}行</option>`).join('')}
+        </select>
+      </span>
+    </div>
+  `;
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="table-container">
+      <table>${thead}${tbody}</table>
+    </div>
+    ${paginationHtml}
+  `;
 }
 
-// Enter キー対応
-document.getElementById("search").addEventListener("keypress", function(e){
-    if(e.key === "Enter") search();
-});
+function changePage(dir) {
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  currentPage = Math.max(0, Math.min(currentPage + dir, totalPages - 1));
+  renderTable();
+  document.querySelector('.table-container').scrollTop = 0;
+}
+
+function changePageSize(val) {
+  pageSize = parseInt(val);
+  currentPage = 0;
+  renderTable();
+}
 </script>
 </body>
 </html>
