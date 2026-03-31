@@ -115,7 +115,7 @@ function render(list){
     table.innerHTML = html;
 }
 
-// 検索（親部番＆中間のみ）
+// 検索（型ズレ完全対策）
 function search(){
     const key = document.getElementById("search").value.trim();
 
@@ -125,7 +125,9 @@ function search(){
     }
 
     const filtered = masterData.filter(item =>
-        (item["親部番＆中間"] || "").includes(key)
+        String(item["親部番＆中間"] || "")
+            .trim()
+            .includes(key)
     );
 
     render(filtered);
