@@ -48,7 +48,7 @@ th {
 let masterData = [];
 let allDates = []; // ★ 全データから収集した日付列を保持
 
-fetch("schedule.json")
+fetch("ketsugou.json")
 .then(res => res.json())
 .then(data => {
     masterData = data;
