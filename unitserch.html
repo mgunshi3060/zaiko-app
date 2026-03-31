@@ -55,10 +55,10 @@ th {
 
 <body>
 
-<h2 style="text-align:center;">工程検索</h2>
+<h2 style="text-align:center;">工程検索（親部番＆中間）</h2>
 
 <div class="search-box">
-  <input type="text" id="search" placeholder="例：408 / 溶接">
+  <input type="text" id="search" placeholder="例：408 / 430">
   <button onclick="search()">検索</button>
 </div>
 
@@ -115,7 +115,7 @@ function render(list){
     table.innerHTML = html;
 }
 
-// 検索処理（あいまい＋全項目）
+// 検索（親部番＆中間のみ）
 function search(){
     const key = document.getElementById("search").value.trim();
 
@@ -125,10 +125,7 @@ function search(){
     }
 
     const filtered = masterData.filter(item =>
-        (item["親部番＆中間"] || "").includes(key) ||
-        (item["ホトム部番"] || "").includes(key) ||
-        (item["部署"] || "").includes(key) ||
-        (item["部番"] || "").includes(key)
+        (item["親部番＆中間"] || "").includes(key)
     );
 
     render(filtered);
