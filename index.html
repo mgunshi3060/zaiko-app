@@ -2,210 +2,470 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>工程情報 / 在庫検索</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="googlebot" content="noindex, nofollow">
+<title>工程情報／在庫検索</title>
 <style>
-* { box-sizing: border-box; }
-body {
-  font-family: sans-serif;
-  padding: 10px;
-  background: #f5f5f5;
-  font-size: 14px;
-}
+  :root {
+    --bg:        #f4f6f8;
+    --surface:   #ffffff;
+    --border:    #d0d7de;
+    --border2:   #a0aab5;
+    --accent:    #1a7f5a;
+    --accent-lt: #e6f4ef;
+    --header-bg: #1e2a38;
+    --text:      #1a1f27;
+    --text-muted:#5a6474;
+    --text-dim:  #9aa3af;
+    --header-h:  60px;
+    --status-h:  32px;
+    --font: '游ゴシック','Yu Gothic','YuGothic','Noto Sans JP',sans-serif;
+  }
 
-h2 {
-  text-align: center;
-  font-size: 16px;
-  font-weight: bold;
-  margin: 0 0 10px 0;
-}
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
-/* ===== 検索エリア ===== */
-.search-row {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
-  justify-content: center;
-}
-.search-row input {
-  width: 60%;
-  padding: 8px;
-  font-size: 15px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-}
-.search-row button {
-  padding: 8px 14px;
-  font-size: 15px;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #aaa;
-  border-radius: 3px;
-}
-.search-row button:hover { background: #e8e8e8; }
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-weight: 500;
+  }
 
-/* ===== 工程情報 ===== */
-#koutei-result {
-  background: white;
-  border: 1px solid #ccc;
-  padding: 8px 12px;
-  margin-bottom: 12px;
-  display: none; /* 初期非表示 */
-}
-.koutei-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  font-size: 13px;
-  padding: 3px 0;
-}
-.koutei-code { font-weight: bold; min-width: 120px; }
-.koutei-lot  { min-width: 55px; color: #555; }
-.koutei-processes { display: flex; gap: 4px; flex-wrap: wrap; }
-.koutei-step {
-  padding: 2px 8px;
-  background: #f0f0f0;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  font-size: 12px;
-}
+  /* ══ ヘッダー ══ */
+  .header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: var(--header-bg);
+    border-bottom: 1px solid #0a111a;
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 14px; z-index: 300;
+  }
+  .logo {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+    color: #7dd3b0; white-space: nowrap; display: none;
+  }
+  @media (min-width: 480px) { .logo { display: block; } }
 
-/* ===== 在庫テーブル ===== */
-.result-block { margin-top: 12px; }
-.result-block b { display: block; margin-bottom: 4px; font-size: 13px; }
-.table-wrap { overflow-x: auto; }
-table {
-  border-collapse: collapse;
-  text-align: center;
-  background: white;
-  font-size: 11px;
-  white-space: nowrap;
-}
-th, td { padding: 5px 8px; border: 1px solid #ddd; }
-.sunday   { background: #ffdddd; }
-.saturday { background: #ddeeff; }
-.danger   { color: red; font-weight: bold; }
+  .search-wrap { flex: 1; position: relative; min-width: 0; }
+  .search-icon {
+    position: absolute; left: 11px; top: 50%;
+    transform: translateY(-50%); font-size: 14px;
+    pointer-events: none; color: #9aa3af;
+  }
+  #searchInput {
+    width: 100%; height: 40px;
+    background: #2c3a4a; border: 1.5px solid #3e5068;
+    border-radius: 8px; color: #e8edf3;
+    font-family: var(--font); font-size: 14px;
+    padding: 0 36px 0 36px; outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none;
+  }
+  #searchInput:focus { border-color: #7dd3b0; box-shadow: 0 0 0 3px rgba(125,211,176,.18); }
+  #searchInput::placeholder { color: #5a6474; font-size: 12px; }
+
+  #clearBtn {
+    position: absolute; right: 8px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; color: #5a6474;
+    font-size: 15px; cursor: pointer; padding: 4px 6px;
+    display: none; line-height: 1;
+  }
+  #clearBtn.visible { display: block; }
+
+  /* ══ プログレスバー ══ */
+  #progressWrap {
+    position: fixed; top: var(--header-h); left: 0; right: 0;
+    height: 3px; background: #d0d7de; z-index: 400; display: none;
+  }
+  #progressBar { height: 100%; background: var(--accent); width: 0%; transition: width .15s; }
+
+  /* ══ ステータスバー ══ */
+  .status-bar {
+    position: fixed; top: var(--header-h); left: 0; right: 0;
+    height: var(--status-h); background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; padding: 0 12px;
+    font-size: 10px; font-family: var(--font);
+    color: var(--text-muted); z-index: 290; overflow: hidden;
+  }
+  .status-bar .cnt { color: var(--accent); font-weight: 700; }
+  .status-tag {
+    background: #eef1f4; border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 7px; font-size: 10px; white-space: nowrap;
+  }
+  .spinner {
+    width: 12px; height: 12px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .7s linear infinite;
+    display: inline-block; vertical-align: middle; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ══ コンテンツエリア ══ */
+  #content {
+    padding: calc(var(--header-h) + var(--status-h) + 14px) 12px 24px;
+    max-width: 100%;
+  }
+
+  /* ══ 初期・エラー表示 ══ */
+  .placeholder {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px; padding: 60px 24px; text-align: center;
+  }
+  .placeholder .icon { font-size: 48px; }
+  .placeholder p { font-size: 13px; color: var(--text-muted); line-height: 1.8; }
+
+  /* ══ セクションタイトル ══ */
+  .section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--text-muted); text-transform: uppercase;
+    padding: 8px 0 6px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title .badge {
+    background: var(--accent); color: #fff;
+    border-radius: 10px; padding: 1px 8px;
+    font-size: 10px; font-weight: 700;
+  }
+
+  /* ══ 工程情報カード ══ */
+  .koutei-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+  }
+  .koutei-code {
+    font-weight: 700; font-size: 13px;
+    color: #1a5c3a; min-width: 130px;
+  }
+  .koutei-lot {
+    font-size: 11px; color: var(--text-muted); min-width: 60px;
+    align-self: center;
+  }
+  .koutei-steps { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .koutei-step {
+    padding: 3px 10px;
+    background: #eef1f4; border: 1px solid var(--border);
+    border-radius: 12px; font-size: 11px; color: var(--text);
+    white-space: nowrap;
+  }
+
+  /* ══ 在庫テーブルブロック ══ */
+  .zaiko-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .zaiko-block-header {
+    background: #2c3a4a;
+    padding: 8px 14px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .zaiko-buban {
+    font-size: 13px; font-weight: 700; color: #7dd3b0;
+  }
+  .zaiko-busho {
+    font-size: 11px;
+    background: rgba(125,211,176,.2);
+    color: #7dd3b0;
+    border: 1px solid rgba(125,211,176,.3);
+    border-radius: 10px;
+    padding: 2px 10px;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    border-collapse: separate; border-spacing: 0;
+    font-size: 12px; min-width: 100%;
+    font-family: var(--font);
+    white-space: nowrap;
+  }
+
+  /* ヘッダー行 */
+  thead th {
+    background: #3a4f62; color: #c8d4e0;
+    font-weight: 700; font-size: 10px; letter-spacing: 0.04em;
+    padding: 7px 12px;
+    border-bottom: 2px solid #1a2836;
+    border-right: 1px solid #2c3a4a;
+    text-align: center;
+  }
+  thead th:last-child { border-right: none; }
+
+  /* データ行 */
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    text-align: right;
+    font-size: 12px;
+  }
+  tbody td:last-child { border-right: none; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* 土曜・日曜 */
+  .c-sat, th.c-sat { background: #cce8ff !important; }
+  .c-sun, th.c-sun { background: #ffd6d6 !important; }
+  th.c-sat { color: #1a4070 !important; }
+  th.c-sun { color: #701a1a !important; }
+
+  /* マイナス強調 */
+  .c-minus { color: #d93025 !important; font-weight: 700; }
+  .c-zero  { color: var(--text-dim); }
+
+  /* ハイライト */
+  mark { background: rgba(26,127,90,.2); color: #0f5c3a; border-radius: 2px; padding: 0 1px; }
+
+  /* 「なし」表示 */
+  .no-result {
+    padding: 20px; text-align: center;
+    font-size: 12px; color: var(--text-dim);
+  }
+
+  /* スマホ縦最適化 */
+  @media (max-width: 480px) and (orientation: portrait) {
+    .koutei-code { font-size: 12px; min-width: 100px; }
+    .zaiko-buban { font-size: 12px; }
+    tbody td { padding: 6px 8px; font-size: 11px; }
+    thead th  { padding: 6px 8px; font-size: 9px; }
+  }
 </style>
 </head>
 <body>
 
-<h2>工程情報在庫情報検索</h2>
-
-<!-- 検索 -->
-<div class="search-row">
-  <input type="text" id="search" placeholder="部番（例：FC6-0104）">
-  <button onclick="searchData()">検索</button>
+<!-- ヘッダー -->
+<div class="header">
+  <span class="logo">VIEWER</span>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput"
+      placeholder="部番・品番を入力して検索..."
+      autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+    <button id="clearBtn" onclick="clearSearch()" aria-label="クリア">✕</button>
+  </div>
 </div>
 
-<!-- 工程情報結果（検索後に表示） -->
-<div id="koutei-result"></div>
+<div id="progressWrap"><div id="progressBar"></div></div>
 
-<!-- 在庫検索結果 -->
-<div id="zaiko-result"></div>
+<div class="status-bar" id="statusBar">
+  <span id="statusMsg"><span class="spinner"></span>&nbsp;データを読み込んでいます...</span>
+</div>
+
+<!-- コンテンツ -->
+<div id="content">
+  <div class="placeholder" id="placeholder">
+    <div class="icon">🔍</div>
+    <p>部番または品番を入力して検索してください<br>工程情報と在庫情報を同時に表示します</p>
+  </div>
+  <div id="results" style="display:none"></div>
+</div>
 
 <script>
+'use strict';
+
 let kouteiData = [];
 let zaikoData  = [];
+let loadedCount = 0;
+let pgTimer;
+let searchTimer;
+let lastQuery = '';
 
-// ===== koutei.json 読み込み =====
-fetch("koutei.json")
-  .then(res => res.json())
-  .then(json => { kouteiData = json; })
-  .catch(err => console.error("koutei.json エラー:", err));
-
-// ===== zaiko.json 読み込み =====
-fetch("zaiko.json")
-  .then(res => res.json())
-  .then(json => { zaikoData = json; })
-  .catch(err => console.error("zaiko.json エラー:", err));
-
-// ===== 検索 =====
-function searchData() {
-  const keyword = document.getElementById("search").value.trim().toLowerCase();
-  const kouteiDiv = document.getElementById("koutei-result");
-  const zaikoDiv  = document.getElementById("zaiko-result");
-
-  kouteiDiv.innerHTML = "";
-  zaikoDiv.innerHTML  = "";
-  kouteiDiv.style.display = "none";
-
-  if (!keyword) {
-    zaikoDiv.innerHTML = "検索ワードを入力してください";
-    return;
-  }
-
-  // --- 工程情報 ---
-  const kFiltered = kouteiData.filter(item =>
-    (item["品番"] || "").toLowerCase().includes(keyword)
-  );
-  if (kFiltered.length > 0) {
-    kouteiDiv.style.display = "block";
-    kFiltered.forEach(item => {
-      const code  = item["品番"] || "";
-      const lot   = item["図番"] || "";
-      const procs = (item["工程"] || []).filter(p => p !== "");
-      const stepsHtml = procs.map(p =>
-        `<span class="koutei-step">${p}</span>`
-      ).join("");
-      kouteiDiv.innerHTML += `
-        <div class="koutei-row">
-          <span class="koutei-code">${code}</span>
-          <span class="koutei-lot">${lot}</span>
-          <div class="koutei-processes">${stepsHtml}</div>
-        </div>
-      `;
-    });
-  }
-
-  // --- 在庫テーブル ---
-  const zFiltered = zaikoData.filter(item =>
-    (item["部番"] || "").toLowerCase().includes(keyword)
-  );
-  if (zFiltered.length === 0) {
-    zaikoDiv.innerHTML = kFiltered.length > 0 ? "在庫データなし" : "該当なし";
-    return;
-  }
-  zFiltered.forEach(item => {
-    const dates = Object.keys(item["在庫"] || {});
-
-    const headerCells = dates.map(d => {
-      const clean = d.replace(/\s/g, "");
-      let cls = "";
-      if (clean.includes("日")) cls = "sunday";
-      else if (clean.includes("土")) cls = "saturday";
-      return `<th class="${cls}">${d}</th>`;
-    }).join("");
-
-    const dataCells = dates.map(d => {
-      const value = item["在庫"][d];
-      if (value == null) return `<td></td>`;
-      const num = Math.round(value);
-      if (num < 0) return `<td class="danger">▲${Math.abs(num)}</td>`;
-      return `<td>${num}</td>`;
-    }).join("");
-
-    zaikoDiv.innerHTML += `
-      <div class="result-block">
-        <b>${item["部番"]}（${item["部署"] || ""}）</b>
-        <div class="table-wrap">
-          <table>
-            <tr>${headerCells}</tr>
-            <tr>${dataCells}</tr>
-          </table>
-        </div>
-      </div>
-    `;
-  });
+/* ── 土日判定 ── */
+function getDayType(label) {
+  const s = label.replace(/\s/g, '');
+  if (s.includes('日)') || s.includes('日）')) return 'sun';
+  if (s.includes('土)') || s.includes('土）')) return 'sat';
+  return '';
 }
 
-// Enterキーで検索
-document.getElementById("search").addEventListener("keydown", e => {
-  if (e.key === "Enter") searchData();
+/* ── 2ファイル並列fetch ── */
+setProgress(true);
+Promise.all([
+  fetch('./koutei.json').then(r => r.ok ? r.json() : Promise.reject('koutei ' + r.status)),
+  fetch('./zaiko.json') .then(r => r.ok ? r.json() : Promise.reject('zaiko '  + r.status)),
+]).then(([kJson, zJson]) => {
+  kouteiData = Array.isArray(kJson) ? kJson : [];
+  zaikoData  = Array.isArray(zJson) ? zJson : [];
+  setProgress(false);
+  updateStatus();
+}).catch(err => {
+  setProgress(false);
+  setStatus(`❌ 読み込み失敗: ${err}`);
 });
-</script>
-</body>
-</html>
+
+/* ── 検索イベント ── */
+document.getElementById('searchInput').addEventListener('input', function() {
+  const val = this.value;
+  document.getElementById('clearBtn').classList.toggle('visible', val.length > 0);
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => doSearch(val.trim()), 200);
+});
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { clearTimeout(searchTimer); doSearch(e.target.value.trim()); }
+});
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearBtn').classList.remove('visible');
+  doSearch('');
+}
+
+/* ── 検索実行 ── */
+function doSearch(keyword) {
+  lastQuery = keyword;
+  const resultsDiv = document.getElementById('results');
+  const placeholder = document.getElementById('placeholder');
+
+  if (!keyword) {
+    resultsDiv.style.display = 'none';
+    resultsDiv.innerHTML = '';
+    placeholder.style.display = 'flex';
+    updateStatus();
+    return;
+  }
+
+  placeholder.style.display = 'none';
+  resultsDiv.style.display = 'block';
+
+  const q = keyword.toLowerCase();
+
+  // 工程検索
+  const kFiltered = kouteiData.filter(item =>
+    (item['品番'] || '').toLowerCase().includes(q)
+  );
+
+  // 在庫検索
+  const zFiltered = zaikoData.filter(item =>
+    (item['部番'] || '').toLowerCase().includes(q)
+  );
+
+  // 描画
+  const buf = [];
+
+  // ── 工程情報セクション ──
+  buf.push(`<div class="section-title">⚙️ 工程情報 <span class="badge">${kFiltered.length}件</span></div>`);
+  if (kFiltered.length === 0) {
+    buf.push(`<div class="no-result">該当する工程情報がありません</div>`);
+  } else {
+    for (const item of kFiltered) {
+      const code  = esc(item['品番'] || '');
+      const lot   = esc(item['図番'] || '');
+      const procs = (item['工程'] || []).filter(p => p && p !== '');
+      const stepsHtml = procs.map(p => `<span class="koutei-step">${esc(p)}</span>`).join('');
+      buf.push(`
+        <div class="koutei-card">
+          <div class="koutei-code">${hi(code, q)}</div>
+          <div class="koutei-lot">${lot}</div>
+          <div class="koutei-steps">${stepsHtml}</div>
+        </div>
+      `);
+    }
+  }
+
+  // ── 在庫情報セクション ──
+  buf.push(`<div class="section-title" style="margin-top:16px">📦 在庫情報 <span class="badge">${zFiltered.length}件</span></div>`);
+  if (zFiltered.length === 0) {
+    buf.push(`<div class="no-result">該当する在庫データがありません</div>`);
+  } else {
+    for (const item of zFiltered) {
+      const buban = item['部番'] || '';
+      const busho = item['部署'] || '';
+      const zaiko = item['在庫'] || {};
+      const dates = Object.keys(zaiko);
+
+      const headerCells = dates.map(d => {
+        const day = getDayType(d);
+        const cls = day === 'sat' ? ' class="c-sat"' : day === 'sun' ? ' class="c-sun"' : '';
+        return `<th${cls}>${esc(d)}</th>`;
+      }).join('');
+
+      const dataCells = dates.map(d => {
+        const raw = zaiko[d];
+        if (raw === null || raw === undefined) return `<td class="c-zero">—</td>`;
+        const num = Math.round(Number(raw));
+        const day = getDayType(d);
+        const dayCls = day === 'sat' ? ' c-sat' : day === 'sun' ? ' c-sun' : '';
+        if (num < 0) return `<td class="c-minus${dayCls}">▲${Math.abs(num).toLocaleString()}</td>`;
+        if (num === 0) return `<td class="c-zero${dayCls}">0</td>`;
+        return `<td class="${dayCls.trim()}">${num.toLocaleString()}</td>`;
+      }).join('');
+
+      buf.push(`
+        <div class="zaiko-block">
+          <div class="zaiko-block-header">
+            <span class="zaiko-buban">${hi(esc(buban), q)}</span>
+            ${busho ? `<span class="zaiko-busho">${esc(busho)}</span>` : ''}
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${headerCells}</tr></thead>
+              <tbody><tr>${dataCells}</tr></tbody>
+            </table>
+          </div>
+        </div>
+      `);
+    }
+  }
+
+  resultsDiv.innerHTML = buf.join('');
+  updateStatus(kFiltered.length, zFiltered.length, keyword);
+}
+
+/* ── ステータス ── */
+function updateStatus(k, z, kw) {
+  let h = `工程: <span class="cnt">${kouteiData.length.toLocaleString()}</span>件`;
+  h += `&nbsp; 在庫: <span class="cnt">${zaikoData.length.toLocaleString()}</span>件`;
+  if (kw) {
+    h += `&nbsp;<span class="status-tag">🔍 "${esc(kw)}"</span>`;
+    if (k !== undefined) h += `&nbsp;<span class="status-tag">⚙️ ${k}件</span>`;
+    if (z !== undefined) h += `&nbsp;<span class="status-tag">📦 ${z}件</span>`;
+  }
+  setStatus(h);
+}
+function setStatus(html) { document.getElementById('statusMsg').innerHTML = html; }
+
+/* ── プログレスバー ── */
+function setProgress(show) {
+  const wrap = document.getElementById('progressWrap');
+  const bar  = document.getElementById('progressBar');
+  clearInterval(pgTimer);
+  if (show) {
+    wrap.style.display = 'block'; let w = 5; bar.style.width = w + '%';
+    pgTimer = setInterval(() => {
+      w = Math.min(w + Math.random() * 12, 88); bar.style.width = w + '%';
+    }, 150);
+  } else {
+    bar.style.width = '100%';
+    setTimeout(() => { wrap.style.display = 'none'; bar.style.width = '0%'; }, 350);
+  }
+}
+
+/* ── ユーティリティ ── */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function hi(escapedText, query) {
+  if (!query) return escapedText;
+  const q = esc(query).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return escapedText.replace(new RegExp(q,'gi'), m => `<mark>${m}</mark>`);
+}
 </script>
 </body>
 </html>
