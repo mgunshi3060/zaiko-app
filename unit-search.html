@@ -395,7 +395,7 @@ let pageSize     = 100;
 let query1       = ''; // 親部番＆中間
 let query2       = ''; // ホトム部番
 let timer1, timer2, pgTimer;
-let jsonUpdatedAt = ''; // JSONの更新日時
+let jsonUpdatedAt = '';
 
 /* ── 土日判定 ── */
 function getDayType(label) {
@@ -448,8 +448,10 @@ function initData(json) {
       allData = Array.isArray(json) ? json : JSON.parse(json);
       buildHeader();
       query1 = ''; query2 = '';
-      applyFilter();
+      filteredData = [];
       setProgress(false);
+      updateStatus();
+      // テーブルは検索実行後に表示（初期全件描画しない）
       document.getElementById('dropZone').style.display = 'none';
       document.getElementById('tableArea').style.display = 'block';
       document.getElementById('pager').classList.add('visible');
@@ -487,18 +489,30 @@ function buildHeader() {
   document.getElementById('tableHead').innerHTML = h;
 }
 
-/* ── 検索（2段階） ── */
+/* ── 検索入力（クリアボタン表示のみ、検索はしない） ── */
 document.getElementById('searchInput').addEventListener('input', function() {
   document.getElementById('clearBtn1').classList.toggle('visible', this.value.length > 0);
-  clearTimeout(timer1);
-  timer1 = setTimeout(() => { query1 = this.value.trim(); currentPage = 0; applyFilter(); }, 200);
 });
-
 document.getElementById('searchInput2').addEventListener('input', function() {
   document.getElementById('clearBtn2').classList.toggle('visible', this.value.length > 0);
-  clearTimeout(timer2);
-  timer2 = setTimeout(() => { query2 = this.value.trim(); currentPage = 0; applyFilter(); }, 200);
 });
+
+/* ── Enter キーで検索実行 ── */
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); execSearch(); }
+});
+document.getElementById('searchInput2').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); execSearch(); }
+});
+
+/* ── 検索実行（ボタン or Enter） ── */
+function execSearch() {
+  if (!allData.length) { setStatus('⏳ データ読み込み中です...'); return; }
+  query1 = document.getElementById('searchInput').value.trim();
+  query2 = document.getElementById('searchInput2').value.trim();
+  currentPage = 0;
+  applyFilter();
+}
 
 function clearSearch1() {
   document.getElementById('searchInput').value = '';
