@@ -468,7 +468,6 @@ function initData(json) {
       document.getElementById('dropZone').style.display = 'none';
       document.getElementById('tableArea').style.display = 'block';
       document.getElementById('pager').classList.add('visible');
-      // テーブルは空（検索後に描画）
       document.getElementById('tableBody').innerHTML =
         `<tr class="empty-row"><td colspan="${4 + dateColumns.length}">👆 キーワードを入力して「検索」を押してください</td></tr>`;
     } catch(err) {
