@@ -406,6 +406,20 @@ function getDayType(label) {
   return '';
 }
 
+/* ── タイムアウト付きfetch（30秒） ── */
+async function fetchWithTimeout(url, options = {}, ms = 30000) {
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), ms);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(tid);
+    return res;
+  } catch(e) {
+    clearTimeout(tid);
+    throw e.name === 'AbortError' ? new Error('タイムアウト（30秒）') : e;
+  }
+}
+
 /* ── JSON強制読込（キャッシュ無効） ── */
 async function forceReload() {
   setProgress(true);
@@ -414,7 +428,7 @@ async function forceReload() {
   document.getElementById('pager').classList.remove('visible');
   setStatus('<span class="spinner"></span>&nbsp;データを読み込んでいます...');
   try {
-    const res = await fetch('./ketsugou.json?_=' + Date.now(), { cache: 'no-store' });
+    const res = await fetchWithTimeout('./ketsugou.json?_=' + Date.now(), { cache: 'no-store' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     jsonUpdatedAt = formatLastModified(res.headers.get('Last-Modified'));
     const json = await res.json();
@@ -422,7 +436,7 @@ async function forceReload() {
   } catch(err) {
     setProgress(false);
     document.getElementById('dropSub').innerHTML = `⚠️ 読み込み失敗: ${err.message}`;
-    setStatus('❌ 読み込み失敗');
+    setStatus('❌ 読み込み失敗: ' + err.message);
   }
 }
 
@@ -430,7 +444,7 @@ async function forceReload() {
 (async function autoLoad() {
   setProgress(true);
   try {
-    const res = await fetch('./ketsugou.json');
+    const res = await fetchWithTimeout('./ketsugou.json');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     jsonUpdatedAt = formatLastModified(res.headers.get('Last-Modified'));
     const json = await res.json();
@@ -438,7 +452,7 @@ async function forceReload() {
   } catch(err) {
     setProgress(false);
     document.getElementById('dropSub').innerHTML = `⚠️ 読み込み失敗: ${err.message}`;
-    setStatus('❌ 読み込み失敗');
+    setStatus('❌ 読み込み失敗: ' + err.message);
   }
 })();
 
@@ -451,10 +465,12 @@ function initData(json) {
       filteredData = [];
       setProgress(false);
       updateStatus();
-      // テーブルは検索実行後に表示（初期全件描画しない）
       document.getElementById('dropZone').style.display = 'none';
       document.getElementById('tableArea').style.display = 'block';
       document.getElementById('pager').classList.add('visible');
+      // テーブルは空（検索後に描画）
+      document.getElementById('tableBody').innerHTML =
+        `<tr class="empty-row"><td colspan="${4 + dateColumns.length}">👆 キーワードを入力して「検索」を押してください</td></tr>`;
     } catch(err) {
       setProgress(false);
       setStatus('❌ 解析エラー: ' + err.message);
@@ -489,7 +505,7 @@ function buildHeader() {
   document.getElementById('tableHead').innerHTML = h;
 }
 
-/* ── 検索入力（クリアボタン表示のみ、検索はしない） ── */
+/* ── 検索入力（クリアボタン表示のみ） ── */
 document.getElementById('searchInput').addEventListener('input', function() {
   document.getElementById('clearBtn1').classList.toggle('visible', this.value.length > 0);
 });
