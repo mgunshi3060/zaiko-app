@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
+<meta name="googlebot" content="noindex, nofollow">
+<title>結合データビューア</title>
+<style>
+  :root {
+    --bg:        #f4f6f8;
+    --surface:   #ffffff;
+    --border:    #d0d7de;
+    --border2:   #a0aab5;
+    --accent:    #1a7f5a;
+    --accent-lt: #e6f4ef;
+    --header-bg: #1e2a38;
+    --text:      #1a1f27;
+    --text-muted:#5a6474;
+    --text-dim:  #9aa3af;
+
+    --header-h:  88px;  /* 2段検索バー分 */
+    --status-h:  32px;
+    --pager-h:   48px;
+
+    /* 固定列幅（PC） */
+    --w-busho: 72px;
+    --w-buban: 170px;
+
+    /* フォント */
+    --font-main: '游ゴシック', 'Yu Gothic', 'YuGothic', 'Noto Sans JP', sans-serif;
+    --font-mono: '游ゴシック', 'Yu Gothic', 'YuGothic', monospace;
+  }
+
+  /* ── スマホ縦画面：固定列幅を縮小 ── */
+  @media (max-width: 480px) and (orientation: portrait) {
+    :root {
+      --w-busho: 44px;
+      --w-buban: 80px;
+      --header-h: 96px;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-main);
+    font-weight: 500;
+    overscroll-behavior: none;
+  }
+
+  /* ══ ヘッダー（2段） ══ */
+  .header {
+    position: fixed; top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: var(--header-bg);
+    border-bottom: 1px solid #0a111a;
+    display: flex; flex-direction: column;
+    justify-content: center; gap: 6px;
+    padding: 8px 12px; z-index: 300;
+  }
+
+  .header-row {
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .search-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    color: #7dd3b0; white-space: nowrap; min-width: 28px;
+    text-transform: uppercase;
+  }
+  .search-label.sub { color: #f0a070; }
+
+  .search-wrap { flex: 1; position: relative; min-width: 0; }
+  .search-icon {
+    position: absolute; left: 10px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px; pointer-events: none; color: #9aa3af;
+  }
+
+  .search-input {
+    width: 100%; height: 34px;
+    background: #2c3a4a; border: 1.5px solid #3e5068;
+    border-radius: 8px; color: #e8edf3;
+    font-family: var(--font-mono); font-size: 13px;
+    padding: 0 32px 0 32px; outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none;
+  }
+  .search-input:focus { border-color: #7dd3b0; box-shadow: 0 0 0 3px rgba(125,211,176,.18); }
+  #searchInput2:focus { border-color: #f0a070; box-shadow: 0 0 0 3px rgba(240,160,112,.18); }
+  .search-input::placeholder { color: #5a6474; font-size: 11px; }
+
+  .clear-btn {
+    position: absolute; right: 7px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; color: #5a6474;
+    font-size: 14px; cursor: pointer; padding: 4px 5px;
+    display: none; line-height: 1;
+  }
+  .clear-btn.visible { display: block; }
+
+  /* ══ プログレスバー ══ */
+  #progressWrap {
+    position: fixed; top: var(--header-h); left: 0; right: 0;
+    height: 3px; background: #d0d7de; z-index: 400; display: none;
+  }
+  #progressBar { height: 100%; background: var(--accent); width: 0%; transition: width .15s; }
+
+  /* ══ ステータスバー ══ */
+  .status-bar {
+    position: fixed; top: var(--header-h); left: 0; right: 0;
+    height: var(--status-h); background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px; padding: 0 10px;
+    font-size: 10px; font-family: var(--font-mono);
+    color: var(--text-muted); z-index: 290; overflow: hidden;
+  }
+  .status-bar .cnt { color: var(--accent); font-weight: 700; }
+  .status-tag {
+    background: #eef1f4; border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 6px; font-size: 10px; white-space: nowrap;
+  }
+  .status-tag.sub { background: #fff0e8; border-color: #f0a070; color: #b05010; }
+  .spinner {
+    width: 12px; height: 12px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .7s linear infinite;
+    display: inline-block; vertical-align: middle; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ══ 初期画面 ══ */
+  #dropZone {
+    position: fixed;
+    top: calc(var(--header-h) + var(--status-h));
+    left: 0; right: 0; bottom: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px; padding: 24px; text-align: center; background: var(--bg);
+  }
+  .drop-icon  { font-size: 48px; }
+  .drop-title { font-size: 15px; font-weight: 700; }
+  .drop-sub   { font-size: 12px; color: var(--text-muted); line-height: 1.8; }
+
+  /* ══ テーブルエリア ══ */
+  #tableArea {
+    display: none;
+    position: fixed;
+    top: calc(var(--header-h) + var(--status-h));
+    left: 0; right: 0; bottom: var(--pager-h);
+    overflow: auto; -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    border-collapse: separate; border-spacing: 0;
+    font-size: 12px; min-width: 100%;
+    font-family: var(--font-mono);
+  }
+
+  /* ── ヘッダー共通 ── */
+  thead th {
+    position: sticky; top: 0; z-index: 20;
+    background: #2c3a4a; color: #c8d4e0;
+    font-weight: 700; font-size: 10px; letter-spacing: 0.04em;
+    padding: 8px 8px;
+    border-bottom: 2px solid #1a2836;
+    border-right: 1px solid #3e5068;
+    white-space: nowrap; user-select: none;
+  }
+
+  /* 固定列ヘッダー */
+  thead th.fx-busho {
+    position: sticky; top: 0; left: 0; z-index: 50;
+    width: var(--w-busho); min-width: var(--w-busho);
+  }
+  thead th.fx-buban {
+    position: sticky; top: 0; left: var(--w-busho); z-index: 50;
+    width: var(--w-buban); min-width: var(--w-buban);
+    border-right: 3px solid #1a7f5a;
+  }
+
+  /* スマホ縦：固定列ヘッダーの文字サイズ小さく */
+  @media (max-width: 480px) and (orientation: portrait) {
+    thead th.fx-busho,
+    thead th.fx-buban { font-size: 8px; padding: 6px 4px; letter-spacing: 0; }
+  }
+
+  /* ── データ行 ── */
+  tbody tr { background: var(--surface); }
+  tbody tr:nth-child(even) { background: #f9fafc; }
+  @media (hover: hover) {
+    tbody tr:hover td { background: #eef6f2 !important; }
+  }
+
+  tbody td {
+    padding: 7px 8px; white-space: nowrap;
+    font-size: 11px; color: var(--text);
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
+  /* 固定列セル */
+  tbody td.fx-busho {
+    position: sticky; left: 0; z-index: 10;
+    width: var(--w-busho); min-width: var(--w-busho);
+    background: inherit; font-weight: 700; color: #1a5080;
+    border-right: 1px solid var(--border2);
+  }
+  tbody td.fx-buban {
+    position: sticky; left: var(--w-busho); z-index: 10;
+    width: var(--w-buban); min-width: var(--w-buban);
+    background: inherit; color: #5a35a0;
+    border-right: 3px solid #1a7f5a;
+  }
+
+  /* スマホ縦：固定列セルの文字サイズ小さく */
+  @media (max-width: 480px) and (orientation: portrait) {
+    tbody td.fx-busho { font-size: 9px; padding: 6px 3px; }
+    tbody td.fx-buban { font-size: 9px; padding: 6px 3px; }
+  }
+
+  /* 非固定列 */
+  td.c-oya  { color: #1a5c3a; font-weight: 700; min-width: 140px; }
+  td.c-hoto { min-width: 130px; }
+
+  /* 日付セル */
+  td.c-date { text-align: right; min-width: 64px; }
+
+  /* スマホ縦：日付列を少し狭く（3列見えやすいように） */
+  @media (max-width: 480px) and (orientation: portrait) {
+    td.c-date { min-width: 52px; font-size: 10px; padding: 6px 4px; }
+    td.c-oya  { min-width: 90px; font-size: 10px; }
+    td.c-hoto { min-width: 80px; font-size: 10px; }
+  }
+
+  td.c-nan-dash { color: var(--text-dim); text-align: center; }
+  td.c-dzero { color: var(--text-dim); text-align: right; }
+  td.c-dval  { text-align: right; }
+  td.c-minus { color: #d93025 !important; font-weight: 700; text-align: right; }
+
+  /* 土曜 */
+  td.c-sat      { background: #cce8ff !important; }
+  th.c-sat-head { background: #1a4070 !important; color: #b8d8ff !important; }
+  /* 日曜 */
+  td.c-sun      { background: #ffd6d6 !important; }
+  th.c-sun-head { background: #701a1a !important; color: #ffb8b8 !important; }
+
+  mark { background: rgba(26,127,90,.2); color: #0f5c3a; border-radius: 2px; padding: 0 1px; }
+  mark.sub { background: rgba(240,130,50,.2); color: #a04010; }
+
+  .empty-row td {
+    text-align: center; padding: 48px 20px;
+    color: var(--text-muted); font-size: 13px;
+    font-family: var(--font-main);
+  }
+
+  /* ══ ページネーション ══ */
+  .pager {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: var(--pager-h); background: var(--surface);
+    border-top: 2px solid var(--border);
+    display: none; align-items: center; gap: 6px; padding: 0 10px; z-index: 300;
+  }
+  .pager.visible { display: flex; }
+
+  .pg-btn {
+    flex-shrink: 0; height: 34px; min-width: 64px;
+    background: #eef1f4; border: 1.5px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-size: 11px; font-family: var(--font-mono);
+    cursor: pointer; transition: border-color .15s, background .15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pg-btn:not(:disabled):hover, .pg-btn:active {
+    border-color: var(--accent); background: var(--accent-lt); color: var(--accent);
+  }
+  .pg-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .pg-info {
+    flex: 1; text-align: center;
+    font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+  }
+  .pg-info span { color: var(--accent); font-weight: 700; }
+
+  .pg-size {
+    background: #eef1f4; border: 1.5px solid var(--border);
+    border-radius: 8px; color: var(--text);
+    font-size: 11px; font-family: var(--font-mono);
+    padding: 0 6px; height: 34px; cursor: pointer; outline: none;
+    -webkit-appearance: none; appearance: none;
+  }
+  .pg-size:focus { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- ヘッダー（2段検索） -->
+<div class="header">
+  <!-- 第1段：親部番＆中間 -->
+  <div class="header-row">
+    <span class="search-label">①親</span>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput"  class="search-input"
+        placeholder="親部番＆中間 をあいまい検索..."
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <button class="clear-btn" id="clearBtn1" onclick="clearSearch1()" aria-label="クリア">✕</button>
+    </div>
+  </div>
+  <!-- 第2段：ホトム部番 -->
+  <div class="header-row">
+    <span class="search-label sub">②子</span>
+    <div class="search-wrap">
+      <span class="search-icon">🔎</span>
+      <input type="text" id="searchInput2" class="search-input"
+        placeholder="ホトム部番 をさらに絞り込み..."
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <button class="clear-btn" id="clearBtn2" onclick="clearSearch2()" aria-label="クリア">✕</button>
+    </div>
+  </div>
+</div>
+
+<div id="progressWrap"><div id="progressBar"></div></div>
+
+<div class="status-bar">
+  <span id="statusMsg"><span class="spinner"></span>&nbsp;データを読み込んでいます...</span>
+</div>
+
+<div id="dropZone">
+  <div class="drop-icon">📋</div>
+  <div class="drop-title">結合データビューア</div>
+  <div class="drop-sub" id="dropSub"><span class="spinner"></span>&nbsp;読み込み中...</div>
+</div>
+
+<div id="tableArea">
+  <table>
+    <thead id="tableHead"></thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<div class="pager" id="pager">
+  <button class="pg-btn" id="prevBtn" onclick="changePage(-1)">◀ 前へ</button>
+  <div class="pg-info" id="pageInfo"></div>
+  <button class="pg-btn" id="nextBtn" onclick="changePage(1)">次へ ▶</button>
+  <select class="pg-size" onchange="changePageSize(this.value)">
+    <option value="50">50行</option>
+    <option value="100" selected>100行</option>
+    <option value="200">200行</option>
+    <option value="500">500行</option>
+  </select>
+</div>
+
+<script>
+'use strict';
+
+let allData      = [];
+let filteredData = [];
+let dateColumns  = [];
+let currentPage  = 0;
+let pageSize     = 100;
+let query1       = ''; // 親部番＆中間
+let query2       = ''; // ホトム部番
+let timer1, timer2, pgTimer;
+
+/* ── 土日判定 ── */
+function getDayType(label) {
+  const m = label.match(/[（(]([月火水木金土日])[)）]/);
+  if (!m) return '';
+  if (m[1] === '土') return 'sat';
+  if (m[1] === '日') return 'sun';
+  return '';
+}
+
+/* ── fetch自動読み込み ── */
+(async function autoLoad() {
+  setProgress(true);
+  try {
+    const res = await fetch('./ketsugou.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    initData(json);
+  } catch(err) {
+    setProgress(false);
+    document.getElementById('dropSub').innerHTML = `⚠️ 読み込み失敗: ${err.message}`;
+    setStatus('❌ 読み込み失敗');
+  }
+})();
+
+function initData(json) {
+  setTimeout(() => {
+    try {
+      allData = Array.isArray(json) ? json : JSON.parse(json);
+      buildHeader();
+      query1 = ''; query2 = '';
+      applyFilter();
+      setProgress(false);
+      document.getElementById('dropZone').style.display = 'none';
+      document.getElementById('tableArea').style.display = 'block';
+      document.getElementById('pager').classList.add('visible');
+    } catch(err) {
+      setProgress(false);
+      setStatus('❌ 解析エラー: ' + err.message);
+    }
+  }, 0);
+}
+
+/* ── ヘッダー構築 ── */
+function buildHeader() {
+  const seen = new Map();
+  for (const row of allData) {
+    if (row['日付'] && typeof row['日付'] === 'object') {
+      for (const k of Object.keys(row['日付'])) {
+        if (!seen.has(k)) seen.set(k, getDayType(k));
+      }
+    }
+  }
+  dateColumns = Array.from(seen.entries()).map(([key, day]) => ({ key, day }));
+
+  // 列順: [部署(固定)] [部番(固定)] | [親部番＆中間] [ホトム部番] [日付…]
+  let h = '<tr>';
+  h += `<th class="fx-busho">部署</th>`;
+  h += `<th class="fx-buban">部番</th>`;
+  h += `<th>親部番＆中間</th>`;
+  h += `<th>ホトム部番</th>`;
+  for (const { key, day } of dateColumns) {
+    const cls = day === 'sat' ? ' class="c-sat-head"'
+              : day === 'sun' ? ' class="c-sun-head"' : '';
+    h += `<th${cls}>${esc(key)}</th>`;
+  }
+  h += '</tr>';
+  document.getElementById('tableHead').innerHTML = h;
+}
+
+/* ── 検索（2段階） ── */
+document.getElementById('searchInput').addEventListener('input', function() {
+  document.getElementById('clearBtn1').classList.toggle('visible', this.value.length > 0);
+  clearTimeout(timer1);
+  timer1 = setTimeout(() => { query1 = this.value.trim(); currentPage = 0; applyFilter(); }, 200);
+});
+
+document.getElementById('searchInput2').addEventListener('input', function() {
+  document.getElementById('clearBtn2').classList.toggle('visible', this.value.length > 0);
+  clearTimeout(timer2);
+  timer2 = setTimeout(() => { query2 = this.value.trim(); currentPage = 0; applyFilter(); }, 200);
+});
+
+function clearSearch1() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearBtn1').classList.remove('visible');
+  query1 = ''; currentPage = 0; applyFilter();
+}
+function clearSearch2() {
+  document.getElementById('searchInput2').value = '';
+  document.getElementById('clearBtn2').classList.remove('visible');
+  query2 = ''; currentPage = 0; applyFilter();
+}
+
+function applyFilter() {
+  let result = allData;
+  // ① 親部番＆中間フィルター
+  if (query1) {
+    const q = query1.toLowerCase();
+    result = result.filter(r => (r['親部番＆中間'] || '').toLowerCase().includes(q));
+  }
+  // ② ホトム部番フィルター（①の結果をさらに絞る）
+  if (query2) {
+    const q = query2.toLowerCase();
+    result = result.filter(r => (r['ホトム部番'] || '').toLowerCase().includes(q));
+  }
+  filteredData = result;
+  renderPage();
+  updateStatus();
+}
+
+/* ── テーブル描画 ── */
+function renderPage() {
+  const start = currentPage * pageSize;
+  const end   = Math.min(start + pageSize, filteredData.length);
+  const rows  = filteredData.slice(start, end);
+  const buf   = [];
+
+  if (rows.length === 0) {
+    buf.push(`<tr class="empty-row"><td colspan="${4 + dateColumns.length}">該当データがありません</td></tr>`);
+  } else {
+    for (const row of rows) {
+      buf.push('<tr>');
+
+      // 固定: 部署
+      const busho = row['部署'];
+      if (!busho || busho === 'nan') {
+        buf.push(`<td class="fx-busho" style="color:var(--text-dim)">—</td>`);
+      } else {
+        buf.push(`<td class="fx-busho">${esc(busho)}</td>`);
+      }
+
+      // 固定: 部番
+      const buban = row['部番'];
+      if (!buban || buban === 'nan') {
+        buf.push(`<td class="fx-buban" style="color:var(--text-dim)">—</td>`);
+      } else {
+        buf.push(`<td class="fx-buban">${esc(buban)}</td>`);
+      }
+
+      // 非固定: 親部番＆中間（①ハイライト）
+      buf.push(`<td class="c-oya">${hi(row['親部番＆中間'] || '', query1, false)}</td>`);
+
+      // 非固定: ホトム部番（②ハイライト）
+      buf.push(`<td class="c-hoto">${hi(row['ホトム部番'] || '', query2, true)}</td>`);
+
+      // 日付列
+      const dates = row['日付'] || {};
+      for (const { key, day } of dateColumns) {
+        const v = dates[key];
+        let cls = 'c-date';
+        if (day === 'sat') cls += ' c-sat';
+        if (day === 'sun') cls += ' c-sun';
+
+        if (v === undefined || v === null) {
+          buf.push(`<td class="${cls} c-nan-dash">—</td>`);
+        } else if (v === 0) {
+          buf.push(`<td class="${cls} c-dzero">0</td>`);
+        } else if (v < 0) {
+          buf.push(`<td class="${cls} c-minus">${v.toLocaleString()}</td>`);
+        } else {
+          buf.push(`<td class="${cls} c-dval">${v.toLocaleString()}</td>`);
+        }
+      }
+      buf.push('</tr>');
+    }
+  }
+
+  document.getElementById('tableBody').innerHTML = buf.join('');
+  document.getElementById('tableArea').scrollTop = 0;
+
+  const total = Math.ceil(filteredData.length / pageSize) || 1;
+  document.getElementById('pageInfo').innerHTML =
+    `<span>${currentPage + 1}</span> / <span>${total}</span>`;
+  document.getElementById('prevBtn').disabled = currentPage === 0;
+  document.getElementById('nextBtn').disabled = currentPage >= total - 1;
+}
+
+/* ── ページング ── */
+function changePage(dir) {
+  const total = Math.ceil(filteredData.length / pageSize);
+  currentPage = Math.max(0, Math.min(currentPage + dir, total - 1));
+  renderPage();
+}
+function changePageSize(val) { pageSize = parseInt(val); currentPage = 0; renderPage(); }
+
+/* ── ステータス ── */
+function updateStatus() {
+  let h = `総件数: <span class="cnt">${allData.length.toLocaleString()}</span>`;
+  h += `&nbsp; 表示: <span class="cnt">${filteredData.length.toLocaleString()}</span>`;
+  if (query1) h += `&nbsp;<span class="status-tag">①&nbsp;"${esc(query1)}"</span>`;
+  if (query2) h += `&nbsp;<span class="status-tag sub">②&nbsp;"${esc(query2)}"</span>`;
+  if (dateColumns.length) h += `&nbsp;<span class="status-tag">📅${dateColumns.length}日</span>`;
+  setStatus(h);
+}
+function setStatus(html) { document.getElementById('statusMsg').innerHTML = html; }
+
+/* ── プログレスバー ── */
+function setProgress(show) {
+  const wrap = document.getElementById('progressWrap');
+  const bar  = document.getElementById('progressBar');
+  clearInterval(pgTimer);
+  if (show) {
+    wrap.style.display = 'block'; let w = 5; bar.style.width = w + '%';
+    pgTimer = setInterval(() => { w = Math.min(w + Math.random() * 12, 88); bar.style.width = w + '%'; }, 150);
+  } else {
+    bar.style.width = '100%';
+    setTimeout(() => { wrap.style.display = 'none'; bar.style.width = '0%'; }, 350);
+  }
+}
+
+/* ── ユーティリティ ── */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                  .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function hi(text, query, isSub) {
+  if (!query) return esc(text);
+  const e = esc(text);
+  const q = esc(query).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const cls = isSub ? 'sub' : '';
+  return e.replace(new RegExp(q,'gi'), m => `<mark class="${cls}">${m}</mark>`);
+}
+</script>
+</body>
+</html>
