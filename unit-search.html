@@ -486,7 +486,7 @@ function buildHeader() {
   }
   dateColumns = Array.from(seen.entries()).map(([key, day]) => ({ key, day }));
 
-  // 列順: [部署(固定)] [部番(固定)] | [親部番＆中間] [ホトム部番] [日付…]
+  // 列順: [部署(固定)] [部番(固定)] | [親部番＆中間] [ボトム部番] [日付…]
   let h = '<tr>';
   h += `<th class="fx-busho">部署</th>`;
   h += `<th class="fx-buban">部番</th>`;
