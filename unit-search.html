@@ -68,6 +68,18 @@
     display: flex; align-items: center; gap: 8px;
   }
 
+  /* 検索実行ボタン */
+  .exec-btn {
+    flex-shrink: 0; height: 28px; padding: 0 10px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 7px;
+    font-size: 11px; font-weight: 700; font-family: var(--font-main);
+    cursor: pointer; white-space: nowrap;
+    transition: opacity .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .exec-btn:active { opacity: .75; }
+
   .search-label {
     font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
     color: #7dd3b0; white-space: nowrap; min-width: 28px;
@@ -245,6 +257,7 @@
 
   /* 土曜 */
   td.c-sat      { background: #cce8ff !important; }
+  th.c-sat-head { background: #1a4070 !important; color: #b8d8ff !important; }
   /* ══ ヘッダーボタン行 ══ */
   .header-btn-row {
     display: flex; align-items: center; gap: 6px;
@@ -332,6 +345,7 @@
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <button class="clear-btn" id="clearBtn1" onclick="clearSearch1()" aria-label="クリア">✕</button>
     </div>
+    <button class="exec-btn" onclick="execSearch()">検索</button>
   </div>
   <!-- 第2段：ホトム部番 -->
   <div class="header-row">
@@ -343,6 +357,7 @@
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <button class="clear-btn" id="clearBtn2" onclick="clearSearch2()" aria-label="クリア">✕</button>
     </div>
+    <button class="exec-btn" onclick="execSearch()">検索</button>
   </div>
   <!-- 第3段：ボタン行 -->
   <div class="header-btn-row">
@@ -353,7 +368,9 @@
       🔍 単品検索
     </button>
   </div>
-</div><div id="progressBar"></div></div>
+</div>
+
+<div id="progressWrap"><div id="progressBar"></div></div>
 
 <div class="status-bar">
   <span id="statusMsg"><span class="spinner"></span>&nbsp;データを読み込んでいます...</span>
@@ -484,18 +501,29 @@ function buildHeader() {
   document.getElementById('tableHead').innerHTML = h;
 }
 
-/* ── 検索（2段階） ── */
+/* ── 検索入力（クリアボタン表示のみ、検索はしない） ── */
 document.getElementById('searchInput').addEventListener('input', function() {
   document.getElementById('clearBtn1').classList.toggle('visible', this.value.length > 0);
-  clearTimeout(timer1);
-  timer1 = setTimeout(() => { query1 = this.value.trim(); currentPage = 0; applyFilter(); }, 200);
 });
-
 document.getElementById('searchInput2').addEventListener('input', function() {
   document.getElementById('clearBtn2').classList.toggle('visible', this.value.length > 0);
-  clearTimeout(timer2);
-  timer2 = setTimeout(() => { query2 = this.value.trim(); currentPage = 0; applyFilter(); }, 200);
 });
+
+/* ── Enter キーで検索実行 ── */
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); execSearch(); }
+});
+document.getElementById('searchInput2').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); execSearch(); }
+});
+
+/* ── 検索実行（ボタン or Enter） ── */
+function execSearch() {
+  query1 = document.getElementById('searchInput').value.trim();
+  query2 = document.getElementById('searchInput2').value.trim();
+  currentPage = 0;
+  applyFilter();
+}
 
 function clearSearch1() {
   document.getElementById('searchInput').value = '';
