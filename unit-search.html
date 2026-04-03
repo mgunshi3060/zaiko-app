@@ -20,7 +20,7 @@
     --text-muted:#5a6474;
     --text-dim:  #9aa3af;
 
-    --header-h:  88px;  /* 2段検索バー分 */
+    --header-h:  122px;  /* 3段（検索2段＋ボタン行）分 */
     --status-h:  32px;
     --pager-h:   48px;
 
@@ -38,7 +38,7 @@
     :root {
       --w-busho: 44px;
       --w-buban: 80px;
-      --header-h: 96px;
+      --header-h: 126px;
     }
   }
 
@@ -83,11 +83,11 @@
   }
 
   .search-input {
-    width: 100%; height: 34px;
+    width: 100%; height: 28px;
     background: #2c3a4a; border: 1.5px solid #3e5068;
     border-radius: 8px; color: #e8edf3;
-    font-family: var(--font-mono); font-size: 13px;
-    padding: 0 32px 0 32px; outline: none;
+    font-family: var(--font-mono); font-size: 12px;
+    padding: 0 28px 0 28px; outline: none;
     transition: border-color .2s, box-shadow .2s;
     -webkit-appearance: none;
   }
@@ -245,7 +245,28 @@
 
   /* 土曜 */
   td.c-sat      { background: #cce8ff !important; }
-  th.c-sat-head { background: #1a4070 !important; color: #b8d8ff !important; }
+  /* ══ ヘッダーボタン行 ══ */
+  .header-btn-row {
+    display: flex; align-items: center; gap: 6px;
+    padding-top: 2px;
+  }
+  .hdr-btn {
+    flex: 1; height: 26px;
+    border: none; border-radius: 7px;
+    font-size: 11px; font-weight: 700; font-family: var(--font-main);
+    cursor: pointer; white-space: nowrap;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    transition: opacity .15s, transform .1s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .hdr-btn:active { opacity: .75; transform: scale(.97); }
+  .hdr-btn-reload {
+    background: #2a7f5a; color: #e0f5ec;
+  }
+  .hdr-btn-tanpin {
+    background: #5a4aa0; color: #e8e4ff;
+  }
+
   /* 日曜 */
   td.c-sun      { background: #ffd6d6 !important; }
   th.c-sun-head { background: #701a1a !important; color: #ffb8b8 !important; }
@@ -323,9 +344,16 @@
       <button class="clear-btn" id="clearBtn2" onclick="clearSearch2()" aria-label="クリア">✕</button>
     </div>
   </div>
-</div>
-
-<div id="progressWrap"><div id="progressBar"></div></div>
+  <!-- 第3段：ボタン行 -->
+  <div class="header-btn-row">
+    <button class="hdr-btn hdr-btn-reload" onclick="forceReload()" aria-label="JSON強制読込">
+      🔄 JSON強制読込
+    </button>
+    <button class="hdr-btn hdr-btn-tanpin" onclick="location.href='https://mgunshi3060.github.io/zaiko-app/tanpin-search.html'" aria-label="単品検索">
+      🔍 単品検索
+    </button>
+  </div>
+</div><div id="progressBar"></div></div>
 
 <div class="status-bar">
   <span id="statusMsg"><span class="spinner"></span>&nbsp;データを読み込んでいます...</span>
@@ -375,6 +403,25 @@ function getDayType(label) {
   if (m[1] === '土') return 'sat';
   if (m[1] === '日') return 'sun';
   return '';
+}
+
+/* ── JSON強制読込（キャッシュ無効） ── */
+async function forceReload() {
+  setProgress(true);
+  document.getElementById('dropZone').style.display = 'flex';
+  document.getElementById('tableArea').style.display = 'none';
+  document.getElementById('pager').classList.remove('visible');
+  setStatus('<span class="spinner"></span>&nbsp;データを読み込んでいます...');
+  try {
+    const res = await fetch('./ketsugou.json?_=' + Date.now(), { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    initData(json);
+  } catch(err) {
+    setProgress(false);
+    document.getElementById('dropSub').innerHTML = `⚠️ 読み込み失敗: ${err.message}`;
+    setStatus('❌ 読み込み失敗');
+  }
 }
 
 /* ── fetch自動読み込み ── */
