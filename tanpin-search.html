@@ -179,6 +179,22 @@
     padding: 3px 10px; background: #eef1f4; border: 1px solid var(--border);
     border-radius: 12px; font-size: 11px; white-space: nowrap;
   }
+  .koutei-extra {
+    width: 100%; display: flex; flex-wrap: wrap; gap: 6px;
+    margin-top: 4px; padding-top: 6px;
+    border-top: 1px dashed var(--border);
+  }
+  .koutei-extra-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--text-muted);
+  }
+  .koutei-extra-label {
+    background: #e8f0fe; border: 1px solid #b8cef8; color: #2a5ab0;
+    border-radius: 4px; padding: 1px 6px; font-size: 10px; font-weight: 700;
+    white-space: nowrap;
+  }
+  .koutei-extra-label.kata { background: #fef3e2; border-color: #f5c97a; color: #8a5a00; }
+  .koutei-extra-val { color: var(--text); font-weight: 500; }
 
   /* ══ 在庫ブロック ══ */
   .zaiko-block {
@@ -400,7 +416,11 @@ function execSearch() {
   window.scrollTo(0, 0);
 
   const q = keyword.toLowerCase();
-  const kFiltered = kouteiData.filter(item => (item['品番'] || '').toLowerCase().includes(q));
+  const kFiltered = kouteiData.filter(item =>
+    (item['品番']   || '').toLowerCase().includes(q) ||
+    (item['類似部品'] || '').toLowerCase().includes(q) ||
+    (item['型共通']  || '').toLowerCase().includes(q)
+  );
   const zFiltered = zaikoData .filter(item => (item['部番'] || '').toLowerCase().includes(q));
 
   const K_LIMIT = 50, Z_LIMIT = 50;
@@ -421,11 +441,29 @@ function execSearch() {
       const lot   = esc(item['図番'] || '');
       const procs = (item['工程'] || []).filter(p => p && p !== '');
       const steps = procs.map(p => `<span class="koutei-step">${esc(p)}</span>`).join('');
+      const ruiji = item['類似部品'] || '';
+      const kata  = item['型共通']   || '';
+      const extraItems = [];
+      if (ruiji) extraItems.push(
+        `<span class="koutei-extra-item">` +
+        `<span class="koutei-extra-label">類似部品</span>` +
+        `<span class="koutei-extra-val">${hi(esc(ruiji), q)}</span>` +
+        `</span>`
+      );
+      if (kata) extraItems.push(
+        `<span class="koutei-extra-item">` +
+        `<span class="koutei-extra-label kata">型共通</span>` +
+        `<span class="koutei-extra-val">${hi(esc(kata), q)}</span>` +
+        `</span>`
+      );
+      const extraHtml = extraItems.length
+        ? `<div class="koutei-extra">${extraItems.join('')}</div>` : '';
       buf.push(
         `<div class="koutei-card">` +
         `<div class="koutei-code">${hi(code, q)}</div>` +
         `<div class="koutei-lot">${lot}</div>` +
         `<div class="koutei-steps">${steps}</div>` +
+        extraHtml +
         `</div>`
       );
     }
