@@ -211,6 +211,12 @@
     background: rgba(125,211,176,.18); border: 1px solid rgba(125,211,176,.3);
     border-radius: 10px; padding: 2px 10px;
   }
+  .zaiko-linked-tag {
+    font-size: 10px; color: #f5c97a;
+    background: rgba(245,201,122,.15); border: 1px solid rgba(245,201,122,.35);
+    border-radius: 10px; padding: 2px 10px; margin-left: auto;
+    white-space: nowrap;
+  }
 
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
@@ -421,13 +427,30 @@ function execSearch() {
     (item['類似部品'] || '').toLowerCase().includes(q) ||
     (item['型共通']  || '').toLowerCase().includes(q)
   );
-  const zFiltered = zaikoData .filter(item => (item['部番'] || '').toLowerCase().includes(q));
+
+  // 工程ヒット品番を収集（小文字）
+  const hitBuban = kFiltered.map(item => (item['品番'] || '').toLowerCase()).filter(Boolean);
+
+  // 在庫：元キーワード OR 工程ヒット品番（部分一致）でOR検索
+  const zFiltered = zaikoData.filter(item => {
+    const buban = (item['部番'] || '').toLowerCase();
+    if (buban.includes(q)) return true;
+    return hitBuban.some(b => buban.includes(b) || b.includes(buban));
+  });
+
+  // 在庫ヒットが工程連動かどうかを判別（表示用）
+  const zFilteredMeta = zFiltered.map(item => {
+    const buban = (item['部番'] || '').toLowerCase();
+    const directHit = buban.includes(q);
+    const linkedBuban = hitBuban.find(b => !directHit && (buban.includes(b) || b.includes(buban)));
+    return { item, directHit, linkedBuban: linkedBuban || null };
+  });
 
   const K_LIMIT = 50, Z_LIMIT = 50;
   const kOver = kFiltered.length > K_LIMIT;
-  const zOver = zFiltered.length > Z_LIMIT;
+  const zOver = zFilteredMeta.length > Z_LIMIT;
   const kShow = kOver ? kFiltered.slice(0, K_LIMIT) : kFiltered;
-  const zShow = zOver ? zFiltered.slice(0, Z_LIMIT) : zFiltered;
+  const zShow = zOver ? zFilteredMeta.slice(0, Z_LIMIT) : zFilteredMeta;
 
   const buf = [];
 
@@ -470,15 +493,23 @@ function execSearch() {
   }
 
   /* 在庫情報 */
-  buf.push(`<div class="section-title" style="margin-top:16px">📦 在庫情報 <span class="badge">${zFiltered.length}件</span>${zOver ? `<span style="font-size:10px;color:var(--text-dim)">（上位${Z_LIMIT}件表示）</span>` : ''}</div>`);
+  buf.push(`<div class="section-title" style="margin-top:16px">📦 在庫情報 <span class="badge">${zFilteredMeta.length}件</span>${zOver ? `<span style="font-size:10px;color:var(--text-dim)">（上位${Z_LIMIT}件表示）</span>` : ''}</div>`);
   if (zShow.length === 0) {
     buf.push(`<div class="no-result">該当する在庫データがありません</div>`);
   } else {
-    for (const item of zShow) {
+    for (const { item, directHit, linkedBuban } of zShow) {
       const buban = item['部番'] || '';
       const busho = item['部署'] || '';
       const zaiko = item['在庫'] || {};
       const dates = Object.keys(zaiko);
+
+      // ヘッダー右側に連動バッジ
+      const linkedTag = (!directHit && linkedBuban)
+        ? `<span class="zaiko-linked-tag">🔗 工程連動: ${esc(linkedBuban.toUpperCase())}</span>`
+        : '';
+
+      // 部番のハイライト：直接ヒットならqで、連動ならlinkedBubanで
+      const highlightQ = directHit ? q : (linkedBuban || q);
 
       let thead = '', dayTypes = [];
       for (const d of dates) {
@@ -506,8 +537,9 @@ function execSearch() {
       buf.push(
         `<div class="zaiko-block">` +
         `<div class="zaiko-block-header">` +
-        `<span class="zaiko-buban">${hi(esc(buban), q)}</span>` +
+        `<span class="zaiko-buban">${hi(esc(buban), highlightQ)}</span>` +
         (busho ? `<span class="zaiko-busho">${esc(busho)}</span>` : '') +
+        linkedTag +
         `</div>` +
         `<div class="table-wrap"><table>` +
         `<thead><tr>${thead}</tr></thead>` +
@@ -520,7 +552,7 @@ function execSearch() {
   resultsDiv.innerHTML = buf.join('');
 
   let sh = `工程: <span class="cnt">${kFiltered.length}</span>件&nbsp;`
-         + `在庫: <span class="cnt">${zFiltered.length}</span>件&nbsp;`
+         + `在庫: <span class="cnt">${zFilteredMeta.length}</span>件&nbsp;`
          + `<span class="status-tag">🔍 "${esc(keyword)}"</span>`;
   if (jsonUpdatedAt) sh += `&nbsp;<span class="status-tag">🕒${jsonUpdatedAt}</span>`;
   setStatus(sh);
