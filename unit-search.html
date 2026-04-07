@@ -243,6 +243,8 @@
   /* 非固定列 */
   td.c-oya  { color: #1a5c3a; font-weight: 700; min-width: 140px; }
   td.c-hoto { min-width: 130px; }
+  td.c-nouki { min-width: 100px; color: #7a4010; font-weight: 600; }
+  th.c-nouki-head { background: #2c3a4a; }
 
   /* 日付セル */
   td.c-date { text-align: right; min-width: 64px; }
@@ -252,6 +254,7 @@
     td.c-date { min-width: 52px; font-size: 10px; padding: 6px 4px; }
     td.c-oya  { min-width: 90px; font-size: 10px; }
     td.c-hoto { min-width: 80px; font-size: 10px; }
+    td.c-nouki { min-width: 70px; font-size: 10px; }
   }
 
   td.c-nan-dash { color: var(--text-dim); text-align: center; }
@@ -490,12 +493,13 @@ function buildHeader() {
   }
   dateColumns = Array.from(seen.entries()).map(([key, day]) => ({ key, day }));
 
-  // 列順: [部署(固定)] [部番(固定)] | [親部番＆中間] [ボトム部番] [日付…]
+  // 列順: [部署(固定)] [部番(固定)] | [親部番＆中間] [ボトム部番] [納入先] [日付…]
   let h = '<tr>';
   h += `<th class="fx-busho">部署</th>`;
   h += `<th class="fx-buban">部番</th>`;
   h += `<th>親部番＆中間</th>`;
   h += `<th>ボトム部番</th>`;
+  h += `<th class="c-nouki-head">納入先</th>`;
   for (const { key, day } of dateColumns) {
     const cls = day === 'sat' ? ' class="c-sat-head"'
               : day === 'sun' ? ' class="c-sun-head"' : '';
@@ -565,7 +569,7 @@ function renderPage() {
   const buf   = [];
 
   if (rows.length === 0) {
-    buf.push(`<tr class="empty-row"><td colspan="${4 + dateColumns.length}">該当データがありません</td></tr>`);
+    buf.push(`<tr class="empty-row"><td colspan="${5 + dateColumns.length}">該当データがありません</td></tr>`);
   } else {
     for (const row of rows) {
       buf.push('<tr>');
@@ -591,6 +595,14 @@ function renderPage() {
 
       // 非固定: ホトム部番（②ハイライト）
       buf.push(`<td class="c-hoto">${hi(row['ホトム部番'] || '', query2, true)}</td>`);
+
+      // 非固定: 納入先
+      const nouki = row['納入先'];
+      if (!nouki || nouki === 'nan') {
+        buf.push(`<td class="c-nouki" style="color:var(--text-dim)">—</td>`);
+      } else {
+        buf.push(`<td class="c-nouki">${esc(nouki)}</td>`);
+      }
 
       // 日付列
       const dates = row['日付'] || {};
