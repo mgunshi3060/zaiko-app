@@ -251,7 +251,7 @@
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput"
-        placeholder="部番・品番を入力（リアルタイム絞り込み）"
+        placeholder="部番・品番を入力..."
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <button id="clearBtn" onclick="clearSearch()" aria-label="クリア">✕</button>
     </div>
@@ -478,18 +478,13 @@ function updateStatus() {
   let h = `工程: <span class="cnt">${kouteiData.length.toLocaleString()}</span>件&nbsp;`
         + `在庫: <span class="cnt">${zaikoData.length.toLocaleString()}</span>件`;
   if (jsonUpdatedAt) h += `&nbsp;<span class="status-tag">🕒${jsonUpdatedAt}</span>`;
-  h += `&nbsp;—&nbsp;キーワード入力で絞り込み`;
+  h += `&nbsp;—&nbsp;検索ボタンまたはEnterで絞り込み`;
   setStatus(h);
 }
 
-/* ── リアルタイム絞り込み（DOM hidden 切り替え） ── */
-let filterTimer = null;
+/* ── 入力イベント（クリアボタン表示のみ・検索は行わない） ── */
 document.getElementById('searchInput').addEventListener('input', function() {
   document.getElementById('clearBtn').classList.toggle('visible', this.value.length > 0);
-  if (!dataReady) return;
-  // デバウンス（16ms ≒ 1フレーム）
-  clearTimeout(filterTimer);
-  filterTimer = setTimeout(() => applyFilter(this.value.trim()), 16);
 });
 
 document.getElementById('searchInput').addEventListener('keydown', function(e) {
