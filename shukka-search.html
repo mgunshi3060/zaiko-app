@@ -201,6 +201,7 @@
     border-radius: 0 0 8px 8px;
   }
   .shukka-buban { font-size: 13px; font-weight: 700; color: #ffffff; }
+  .shukka-torihiki-main { font-size: 13px; font-weight: 700; color: #ffffff; }
   .shukka-torihiki {
     font-size: 11px; color: #a8c8e8;
     background: rgba(168,200,232,.15); border: 1px solid rgba(168,200,232,.3);
@@ -495,18 +496,18 @@ function execSearch() {
   if (filtered.length === 0) {
     buf.push(`<div class="no-result">該当する出荷データがありません</div>`);
   } else {
-    /* 部番ごとにグループ化 */
+    /* 取引先ごとにグループ化 */
     const groups = {};
     for (const row of filtered) {
-      const key = (row['部番'] || '') + '|' + (row['取引先'] || '');
-      if (!groups[key]) groups[key] = { buban: row['部番'] || '', torihiki: row['取引先'] || '', rows: [] };
+      const key = (row['取引先'] || '');
+      if (!groups[key]) groups[key] = { torihiki: row['取引先'] || '', rows: [] };
       groups[key].rows.push(row);
     }
 
-    /* 部番+取引先ごとに表示（計画日昇順） */
+    /* 取引先ごとに表示（納期昇順） */
     const sortedKeys = Object.keys(groups).sort();
     for (const key of sortedKeys) {
-      const { buban, torihiki, rows } = groups[key];
+      const { torihiki, rows } = groups[key];
       rows.sort((a, b) => {
         const da = toComparable(a['納期'] || '');
         const db = toComparable(b['納期'] || '');
@@ -514,19 +515,18 @@ function execSearch() {
       });
 
       const totalSijiGroup = rows.reduce((s, r) => s + (Number(r['生産指示数']) || 0), 0);
+      const buban = '';  // 列に表示するため不要
 
       buf.push(
         `<div class="shukka-block">` +
         `<div class="shukka-block-header">` +
-        `<span class="shukka-buban">${hi(esc(buban), q)}</span>` +
-        `<span class="shukka-torihiki">${esc(torihiki)}</span>` +
+        `<span class="shukka-torihiki-main">${esc(torihiki || '（取引先なし）')}</span>` +
         `<span class="shukka-total-badge">指示数合計 ${totalSijiGroup.toLocaleString()}</span>` +
         `</div>`
       );
 
       let trows = '';
       for (const r of rows) {
-        const kDate  = esc(normalizeDate(r['計画日'] || ''));
         const nDate  = esc(normalizeDate(r['納期']   || ''));
         const siji   = Number(r['生産指示数']) || 0;
         const chumon = esc(r['注文番号'] || '');
@@ -550,17 +550,17 @@ function execSearch() {
 
         trows +=
           `<tr>` +
-          `<td class="td-center">${kDate}</td>` +
+          `<td class="td-center">${chumonStr}</td>` +
+          `<td class="td-left">${hi(esc(buban), q)}</td>` +
           `<td class="td-center">${nDate}</td>` +
           `<td class="td-right">${sijiStr}</td>` +
-          `<td class="td-center">${chumonStr}</td>` +
-          `<td class="td-center">${uriageStr}</td>` +
           `<td class="td-center">${lastUrStr}</td>` +
+          `<td class="td-center">${uriageStr}</td>` +
           `<td class="td-right">${kenshuStr}</td>` +
           `</tr>`;
       }
 
-      const COLS = `<th>計画日</th><th>納期</th><th>生産指示数</th><th>注文番号</th><th>売上合計数</th><th>最終売上日</th><th>検収合計数</th>`;
+      const COLS = `<th>注文番号</th><th>部番</th><th>納期</th><th>生産指示数</th><th>最終売上日</th><th>売上合計数</th><th>検収合計数</th>`;
       buf.push(
         `<div class="table-outer">` +
         `<div class="table-wrap"><table>` +
