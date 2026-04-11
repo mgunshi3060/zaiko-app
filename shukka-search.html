@@ -191,6 +191,7 @@
   .shukka-block-header {
     background: #2c3a4a; padding: 8px 14px;
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    position: sticky; top: calc(var(--header-h) + var(--status-h)); z-index: 10;
   }
   .shukka-buban { font-size: 13px; font-weight: 700; color: #ffffff; }
   .shukka-torihiki {
@@ -217,7 +218,6 @@
     font-weight: 700; font-size: 10px; letter-spacing: 0.04em;
     padding: 7px 12px; border-bottom: 2px solid #1a2836;
     border-right: 1px solid #2c3a4a; text-align: center;
-    position: sticky; top: calc(var(--header-h) + var(--status-h)); z-index: 10;
   }
   thead th:last-child { border-right: none; }
   tbody td {
@@ -282,7 +282,7 @@
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" class="search-input"
-        placeholder="部番を入力..."
+        placeholder="部番・取引先・注文番号を入力..."
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <button class="clear-btn" id="clearBtn" onclick="clearSearch()" aria-label="クリア">✕</button>
     </div>
@@ -313,7 +313,7 @@
 <div id="content">
   <div class="placeholder" id="placeholder">
     <div class="icon">📦</div>
-    <p>部番を入力して「検索」またはEnterを押してください<br>計画日の範囲を指定すると期間絞り込みができます</p>
+    <p>部番・取引先・注文番号を入力して「検索」またはEnterを押してください<br>計画日の範囲を指定すると期間絞り込みができます</p>
     <div class="hint">💡 部番の一部でも検索できます</div>
   </div>
   <div id="results" style="display:none"></div>
@@ -447,15 +447,17 @@ function execSearch() {
 
   placeholder.style.display = 'none';
   resultsDiv.style.display = 'block';
-  window.scrollTo(0, 0);
+  // スクロール位置は維持する
 
   const q = keyword.toLowerCase();
 
-  /* フィルタ：部番のみキーワード一致 + 計画日範囲 */
+  /* フィルタ：部番 OR 取引先 OR 注文番号にキーワード一致 + 計画日範囲 */
   const filtered = shukkaData.filter(item => {
     if (keyword) {
-      const buban = (item['部番'] || '').toLowerCase();
-      if (!buban.includes(q)) return false;
+      const buban     = (item['部番']    || '').toLowerCase();
+      const torihiki  = (item['取引先']  || '').toLowerCase();
+      const chumon    = (item['注文番号']|| '').toLowerCase();
+      if (!buban.includes(q) && !torihiki.includes(q) && !chumon.includes(q)) return false;
     }
     const d = toComparable(item['計画日'] || '');
     if (dateFrom && d < dateFrom) return false;
