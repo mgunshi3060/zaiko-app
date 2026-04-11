@@ -186,7 +186,7 @@
   /* ══ 出荷ブロック ══ */
   .shukka-block {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; margin-bottom: 12px; overflow: hidden;
+    border-radius: 8px; margin-bottom: 12px;
   }
   .shukka-block-header {
     background: #2c3a4a; padding: 8px 14px;
@@ -205,7 +205,7 @@
     border-radius: 10px; padding: 2px 10px; white-space: nowrap;
   }
 
-  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table-wrap { overflow-x: clip; -webkit-overflow-scrolling: touch; }
 
   table {
     border-collapse: separate; border-spacing: 0;
@@ -217,6 +217,7 @@
     font-weight: 700; font-size: 10px; letter-spacing: 0.04em;
     padding: 7px 12px; border-bottom: 2px solid #1a2836;
     border-right: 1px solid #2c3a4a; text-align: center;
+    position: sticky; top: calc(var(--header-h) + var(--status-h)); z-index: 5;
   }
   thead th:last-child { border-right: none; }
   tbody td {
@@ -287,9 +288,9 @@
     </div>
     <button class="search-btn" onclick="execSearch()">検索</button>
   </div>
-  <!-- 第2段：日付範囲（計画日） -->
+  <!-- 第2段：日付範囲（納期） -->
   <div class="date-row">
-    <span class="date-label">計画日</span>
+    <span class="date-label">納期</span>
     <input type="date" id="dateFrom" class="date-input">
     <span class="date-sep">〜</span>
     <input type="date" id="dateTo" class="date-input">
@@ -312,7 +313,7 @@
 <div id="content">
   <div class="placeholder" id="placeholder">
     <div class="icon">📦</div>
-    <p>部番・取引先・注文番号を入力して「検索」またはEnterを押してください<br>計画日の範囲を指定すると期間絞り込みができます</p>
+    <p>部番を入力して「検索」またはEnterを押してください<br>納期の範囲を指定すると期間絞り込みができます</p>
     <div class="hint">💡 部番の一部でも検索できます</div>
   </div>
   <div id="results" style="display:none"></div>
@@ -371,7 +372,7 @@ function toComparable(s) {
 function setDefaultDates() {
   if (!shukkaData.length) return;
   const dates = shukkaData
-    .map(r => toComparable(r['計画日'] || ''))
+    .map(r => toComparable(r['納期'] || ''))
     .filter(Boolean)
     .sort();
   if (dates.length) {
@@ -446,19 +447,17 @@ function execSearch() {
 
   placeholder.style.display = 'none';
   resultsDiv.style.display = 'block';
-  // スクロール位置は維持する
+
 
   const q = keyword.toLowerCase();
 
-  /* フィルタ：部番 OR 取引先 OR 注文番号にキーワード一致 + 計画日範囲 */
+  /* フィルタ：部番のみキーワード一致 + 納期範囲 */
   const filtered = shukkaData.filter(item => {
     if (keyword) {
-      const buban     = (item['部番']    || '').toLowerCase();
-      const torihiki  = (item['取引先']  || '').toLowerCase();
-      const chumon    = (item['注文番号']|| '').toLowerCase();
-      if (!buban.includes(q) && !torihiki.includes(q) && !chumon.includes(q)) return false;
+      const buban = (item['部番'] || '').toLowerCase();
+      if (!buban.includes(q)) return false;
     }
-    const d = toComparable(item['計画日'] || '');
+    const d = toComparable(item['納期'] || '');
     if (dateFrom && d < dateFrom) return false;
     if (dateTo   && d > dateTo)   return false;
     return true;
@@ -491,13 +490,13 @@ function execSearch() {
       groups[key].rows.push(row);
     }
 
-    /* 部番+取引先ごとに表示（計画日昇順） */
+    /* 部番+取引先ごとに表示（納期昇順） */
     const sortedKeys = Object.keys(groups).sort();
     for (const key of sortedKeys) {
       const { buban, torihiki, rows } = groups[key];
       rows.sort((a, b) => {
-        const da = toComparable(a['計画日'] || '');
-        const db = toComparable(b['計画日'] || '');
+        const da = toComparable(a['納期'] || '');
+        const db = toComparable(b['納期'] || '');
         return da < db ? -1 : da > db ? 1 : 0;
       });
 
