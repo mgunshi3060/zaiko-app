@@ -506,7 +506,6 @@ function execSearch() {
       });
 
       const totalSijiGroup = rows.reduce((s, r) => s + (Number(r['生産指示数']) || 0), 0);
-      const buban = '';  // 列に表示するため不要
 
       buf.push(
         `<div class="shukka-block">` +
@@ -539,10 +538,11 @@ function execSearch() {
           : `<span class="c-null">—</span>`;
         const chumonStr = chumon || `<span class="c-null">—</span>`;
 
+        const buban = esc(r['部番'] || '');
         trows +=
           `<tr>` +
           `<td class="td-center">${chumonStr}</td>` +
-          `<td class="td-left">${hi(esc(buban), q)}</td>` +
+          `<td class="td-left">${hi(buban, q)}</td>` +
           `<td class="td-center">${nDate}</td>` +
           `<td class="td-right">${sijiStr}</td>` +
           `<td class="td-center">${lastUrStr}</td>` +
