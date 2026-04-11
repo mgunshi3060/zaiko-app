@@ -186,7 +186,7 @@
   /* ══ 出荷ブロック ══ */
   .shukka-block {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; margin-bottom: 12px;
+    border-radius: 8px; margin-bottom: 12px; overflow: hidden;
   }
   .shukka-block-header {
     background: #2c3a4a; padding: 8px 14px;
@@ -205,7 +205,32 @@
     border-radius: 10px; padding: 2px 10px; white-space: nowrap;
   }
 
-  .table-wrap { overflow-x: clip; -webkit-overflow-scrolling: touch; }
+  /* ── テーブルラッパー：固定ヘッダー付き ── */
+  .table-outer {
+    position: relative;
+  }
+  /* 固定ヘッダー（絶対配置で上に貼る） */
+  .thead-fixed {
+    position: sticky;
+    top: calc(var(--header-h) + var(--status-h));
+    z-index: 20;
+    overflow: hidden;        /* はみ出し非表示 */
+    background: #3a4f62;
+  }
+  .thead-fixed table {
+    margin: 0;
+  }
+  /* スクロール本体 */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* theadは本体テーブルから視覚的に隠す（高さだけ確保） */
+  .table-wrap thead th {
+    visibility: hidden;
+    padding-top: 0; padding-bottom: 0;
+    border: none; height: 0; line-height: 0; font-size: 0;
+  }
 
   table {
     border-collapse: separate; border-spacing: 0;
@@ -217,7 +242,6 @@
     font-weight: 700; font-size: 10px; letter-spacing: 0.04em;
     padding: 7px 12px; border-bottom: 2px solid #1a2836;
     border-right: 1px solid #2c3a4a; text-align: center;
-    position: sticky; top: calc(var(--header-h) + var(--status-h)); z-index: 5;
   }
   thead th:last-child { border-right: none; }
   tbody td {
@@ -490,7 +514,7 @@ function execSearch() {
       groups[key].rows.push(row);
     }
 
-    /* 部番+取引先ごとに表示（納期昇順） */
+    /* 部番+取引先ごとに表示（計画日昇順） */
     const sortedKeys = Object.keys(groups).sort();
     for (const key of sortedKeys) {
       const { buban, torihiki, rows } = groups[key];
@@ -547,19 +571,38 @@ function execSearch() {
           `</tr>`;
       }
 
+      const COLS = `<th>計画日</th><th>納期</th><th>生産指示数</th><th>注文番号</th><th>売上合計数</th><th>最終売上日</th><th>検収合計数</th>`;
       buf.push(
+        `<div class="table-outer">` +
+        `<div class="thead-fixed"><table><thead><tr>${COLS}</tr></thead></table></div>` +
         `<div class="table-wrap"><table>` +
-        `<thead><tr>` +
-        `<th>計画日</th><th>納期</th><th>生産指示数</th>` +
-        `<th>注文番号</th><th>売上合計数</th><th>最終売上日</th><th>検収合計数</th>` +
-        `</tr></thead>` +
+        `<thead><tr>${COLS}</tr></thead>` +
         `<tbody>${trows}</tbody>` +
-        `</table></div></div>`
+        `</table></div></div></div>`
       );
     }
   }
 
   resultsDiv.innerHTML = buf.join('');
+
+  /* 固定ヘッダーと本体テーブルの横スクロールを同期 */
+  resultsDiv.querySelectorAll('.table-outer').forEach(outer => {
+    const fixed = outer.querySelector('.thead-fixed');
+    const wrap  = outer.querySelector('.table-wrap');
+    if (!fixed || !wrap) return;
+    /* 固定ヘッダーの各列幅を本体テーブルに合わせる */
+    const syncWidths = () => {
+      const bodyThs = wrap.querySelectorAll('thead th');
+      const fixedThs = fixed.querySelectorAll('thead th');
+      bodyThs.forEach((th, i) => {
+        if (fixedThs[i]) fixedThs[i].style.width = th.offsetWidth + 'px';
+      });
+      fixed.querySelector('table').style.width = wrap.querySelector('table').offsetWidth + 'px';
+    };
+    syncWidths();
+    /* 横スクロール同期 */
+    wrap.addEventListener('scroll', () => { fixed.scrollLeft = wrap.scrollLeft; });
+  });
 
   /* ステータス更新 */
   let sh = `出荷: <span class="cnt">${filtered.length}</span>件&nbsp;`
