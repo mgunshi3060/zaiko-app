@@ -191,7 +191,6 @@
   .shukka-block-header {
     background: #2c3a4a; padding: 8px 14px;
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    position: sticky; top: calc(var(--header-h) + var(--status-h)); z-index: 10;
   }
   .shukka-buban { font-size: 13px; font-weight: 700; color: #ffffff; }
   .shukka-torihiki {
@@ -297,7 +296,7 @@
   </div>
   <!-- 第3段：ボタン行 -->
   <div class="header-btn-row">
-    <button class="hdr-btn hdr-btn-reload" onclick="forceReload()">🔄 強制読込</button>
+    <button class="hdr-btn hdr-btn-reload" onclick="forceReload()">🔄 JSON強制読込</button>
     <button class="hdr-btn hdr-btn-jisseki" onclick="window.open('./jisseki-search.html','_blank')">📊 実績検索</button>
     <button class="hdr-btn hdr-btn-tanpin" onclick="window.open('https://mgunshi3060.github.io/zaiko-app/tanpin-search.html','_blank')">⚙️ 単品検索</button>
     <button class="hdr-btn hdr-btn-unit" onclick="window.open('https://mgunshi3060.github.io/zaiko-app/unit-search.html','_blank')">🔍 ユニット検索</button>
