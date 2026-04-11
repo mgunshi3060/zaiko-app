@@ -209,27 +209,26 @@
   .table-outer {
     position: relative;
   }
-  /* 固定ヘッダー（絶対配置で上に貼る） */
+  /* 固定ヘッダー：縦スクロールで固定、横は本体に同期 */
   .thead-fixed {
     position: sticky;
     top: calc(var(--header-h) + var(--status-h));
     z-index: 20;
-    overflow: hidden;        /* はみ出し非表示 */
+    overflow: hidden;
     background: #3a4f62;
   }
   .thead-fixed table {
     margin: 0;
+    table-layout: fixed;
   }
   /* スクロール本体 */
   .table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  /* theadは本体テーブルから視覚的に隠す（高さだけ確保） */
-  .table-wrap thead th {
-    visibility: hidden;
-    padding-top: 0; padding-bottom: 0;
-    border: none; height: 0; line-height: 0; font-size: 0;
+  /* 本体のtheadは非表示（固定ヘッダー側で代替） */
+  .table-wrap thead {
+    display: none;
   }
 
   table {
@@ -590,16 +589,32 @@ function execSearch() {
     const fixed = outer.querySelector('.thead-fixed');
     const wrap  = outer.querySelector('.table-wrap');
     if (!fixed || !wrap) return;
-    /* 固定ヘッダーの各列幅を本体テーブルに合わせる */
+
+    /* 列幅を本体テーブルの実測値に合わせる */
     const syncWidths = () => {
-      const bodyThs = wrap.querySelectorAll('thead th');
+      const bodyThs  = wrap.querySelectorAll('tbody tr:first-child td');
       const fixedThs = fixed.querySelectorAll('thead th');
-      bodyThs.forEach((th, i) => {
-        if (fixedThs[i]) fixedThs[i].style.width = th.offsetWidth + 'px';
+      /* tdの実幅で固定ヘッダー各列を揃える */
+      bodyThs.forEach((td, i) => {
+        if (fixedThs[i]) {
+          const w = td.getBoundingClientRect().width;
+          fixedThs[i].style.minWidth = w + 'px';
+          fixedThs[i].style.maxWidth = w + 'px';
+          fixedThs[i].style.width    = w + 'px';
+        }
       });
-      fixed.querySelector('table').style.width = wrap.querySelector('table').offsetWidth + 'px';
+      const tableW = wrap.querySelector('table').getBoundingClientRect().width;
+      fixed.querySelector('table').style.width = tableW + 'px';
     };
-    syncWidths();
+
+    /* DOMペイント後に2回実行して確実に反映 */
+    requestAnimationFrame(() => requestAnimationFrame(syncWidths));
+
+    /* ウィンドウリサイズ時も再同期 */
+    if (window.ResizeObserver) {
+      new ResizeObserver(syncWidths).observe(wrap);
+    }
+
     /* 横スクロール同期 */
     wrap.addEventListener('scroll', () => { fixed.scrollLeft = wrap.scrollLeft; });
   });
