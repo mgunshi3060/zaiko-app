@@ -511,77 +511,57 @@ function execSearch() {
   }
 
   /* ── 実績情報セクション ── */
-  buf.push(`<div class="section-title" style="margin-top:16px">📊 実績情報 <span class="badge">${jFiltered.length}件</span></div>`);
+  const totalQtyAll = jFiltered.reduce((s, r) => s + (Number(r['数量']) || 0), 0);
+  buf.push(`<div class="section-title" style="margin-top:16px">📊 実績情報 <span class="badge">${jFiltered.length}件</span><span style="margin-left:auto;font-size:11px;color:var(--accent);font-weight:700">合計数量: ${totalQtyAll.toLocaleString()}</span></div>`);
 
   if (jFiltered.length === 0) {
     buf.push(`<div class="no-result">該当する実績データがありません</div>`);
   } else {
-    /* 部番ごとにグループ化 */
-    const groups = {};
-    for (const row of jFiltered) {
-      const buban = row['部番'] || '';
-      if (!groups[buban]) groups[buban] = [];
-      groups[buban].push(row);
+    /* 日付昇順 → 部番昇順でソート */
+    const sorted = [...jFiltered].sort((a, b) => {
+      const da = toComparable(a['日付'] || '');
+      const db = toComparable(b['日付'] || '');
+      if (da !== db) return da < db ? -1 : 1;
+      return (a['部番'] || '') < (b['部番'] || '') ? -1 : 1;
+    });
+
+    /* フラットテーブル（エクセルと同じ列構成：部番・工程・日付・数量） */
+    let trows = '';
+    for (const r of sorted) {
+      const buban  = esc(r['部番'] || '');
+      const koutei = esc(r['工程'] || '');
+      const date   = esc(normalizeDate(r['日付'] || ''));
+      const qty    = Number(r['数量']) || 0;
+      const qtyStr = qty < 0
+        ? `<span class="c-minus">▲${Math.abs(qty).toLocaleString()}</span>`
+        : qty === 0
+          ? `<span class="c-zero">0</span>`
+          : `<span class="c-plus">${qty.toLocaleString()}</span>`;
+
+      trows +=
+        `<tr>` +
+        `<td class="td-center">${hi(buban, q)}</td>` +
+        `<td class="td-center">${koutei}</td>` +
+        `<td class="td-center">${date}</td>` +
+        `<td class="td-right">${qtyStr}</td>` +
+        `</tr>`;
     }
 
-    /* 部番ごとに表示（日付昇順 → 部番昇順） */
-    for (const buban of Object.keys(groups).sort()) {
-      const rows = groups[buban].sort((a, b) => {
-        const da = toComparable(a['日付'] || '');
-        const db = toComparable(b['日付'] || '');
-        if (da !== db) return da < db ? -1 : 1;
-        return (a['部番'] || '') < (b['部番'] || '') ? -1 : 1;
-      });
-
-      /* 合計数量（+/- を正確に合算） */
-      const total = rows.reduce((s, r) => s + (Number(r['数量']) || 0), 0);
-      const totalCls = total < 0 ? 'neg' : '';
-
-      /* サマリー */
-      buf.push(
-        `<div class="jisseki-block">` +
-        `<div class="jisseki-block-header">` +
-        `<span class="jisseki-buban">${hi(esc(buban), q)}</span>` +
-        `<span class="jisseki-total-badge">合計 ${total < 0 ? '▲' + Math.abs(total).toLocaleString() : total.toLocaleString()}</span>` +
-        `</div>`
-      );
-
-      /* テーブル */
-      let trows = '';
-      for (const r of rows) {
-        const koutei = esc(r['工程'] || '');
-        const date   = esc(normalizeDate(r['日付'] || ''));
-        const qty    = Number(r['数量']) || 0;
-        const qtyStr = qty < 0
-          ? `<span class="c-minus">▲${Math.abs(qty).toLocaleString()}</span>`
-          : qty === 0
-            ? `<span class="c-zero">0</span>`
-            : `<span class="c-plus">${qty.toLocaleString()}</span>`;
-
-        trows +=
-          `<tr>` +
-          `<td class="td-center">${koutei}</td>` +
-          `<td class="td-center">${date}</td>` +
-          `<td class="td-right">${qtyStr}</td>` +
-          `</tr>`;
-      }
-
-      buf.push(
-        `<div class="table-wrap"><table>` +
-        `<thead><tr><th>工程</th><th>日付</th><th>数量</th></tr></thead>` +
-        `<tbody>${trows}</tbody>` +
-        `</table></div></div>`
-      );
-    }
+    buf.push(
+      `<div class="jisseki-block">` +
+      `<div class="table-wrap"><table>` +
+      `<thead><tr><th>部番</th><th>工程</th><th>日付</th><th>数量</th></tr></thead>` +
+      `<tbody>${trows}</tbody>` +
+      `</table></div></div>`
+    );
   }
 
   resultsDiv.innerHTML = buf.join('');
 
   /* ステータス更新 */
-  const totalQty = jFiltered.reduce((s, r) => s + (Number(r['数量']) || 0), 0);
   let sh = `工程: <span class="cnt">${kFiltered.length}</span>件&nbsp;`
          + `実績: <span class="cnt">${jFiltered.length}</span>件&nbsp;`
-         + `合計数量: <span class="cnt">${totalQty.toLocaleString()}</span>&nbsp;`
+         + `合計数量: <span class="cnt">${totalQtyAll.toLocaleString()}</span>&nbsp;`
          + `<span class="status-tag">🔍 "${esc(keyword)}"</span>`;
   if (dateFrom || dateTo) {
     sh += `&nbsp;<span class="status-tag">📅 ${dateFrom || '—'} 〜 ${dateTo || '—'}</span>`;
