@@ -388,12 +388,14 @@ function toComparable(s) {
 
 /* ── デフォルト日付範囲をデータから自動設定 ── */
 function setDefaultDates() {
-  if (!jissekiData.length) return;
-  const dates = jissekiData.map(r => toComparable(r['日付'] || '')).filter(Boolean).sort();
-  if (dates.length) {
-    document.getElementById('dateFrom').value = dates[0];
-    document.getElementById('dateTo').value   = dates[dates.length - 1];
-  }
+  const now = new Date();
+  const fromDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const toDate   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('dateFrom').value =
+    `${fromDate.getFullYear()}-${pad(fromDate.getMonth()+1)}-${pad(fromDate.getDate())}`;
+  document.getElementById('dateTo').value =
+    `${toDate.getFullYear()}-${pad(toDate.getMonth()+1)}-${pad(toDate.getDate())}`;
 }
 
 /* ── JSON強制読込 ── */
