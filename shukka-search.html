@@ -387,13 +387,15 @@ function toComparable(s) {
   }
 })();
 
-/* ── デフォルト日付範囲：今日から1ヶ月 ── */
+/* ── デフォルト日付範囲：前月1日〜来月末 ── */
 function setDefaultDates() {
   const today = new Date();
-  const to    = new Date(today);
-  to.setMonth(to.getMonth() + 1);
   const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  document.getElementById('dateFrom').value = fmt(today);
+  // 前月1日
+  const from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+  // 来月末（来月+1月の0日 = 来月の末日）
+  const to   = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+  document.getElementById('dateFrom').value = fmt(from);
   document.getElementById('dateTo').value   = fmt(to);
 }
 
