@@ -123,7 +123,7 @@
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" class="search-input"
-        placeholder="部番・製番・手配先・丹愛を入力（空欄可）..."
+        placeholder="部番・製番・手配先・単位を入力（空欄可）..."
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <button class="clear-btn" id="clearBtn" onclick="clearSearch()" aria-label="クリア">✕</button>
     </div>
@@ -255,7 +255,7 @@ function execSearch(){
       const b=(item['部番']||'').toLowerCase();
       const s=(item['製番']||'').toLowerCase();
       const h=(item['手配先']||'').toLowerCase();
-      const t=(item['丹愛']||'').toLowerCase();
+      const t=(item['単位']||'').toLowerCase();
       if(!b.includes(q)&&!s.includes(q)&&!h.includes(q)&&!t.includes(q))return false;
     }
     const d=toComparable(item['納期']||'');
@@ -293,7 +293,7 @@ function execSearch(){
   if(filtered.length===0){
     buf.push(`<div class="no-result">該当する発注データがありません</div>`);
   }else{
-    const COLS=`<th>フラグ</th><th>手配先</th><th>製番</th><th>発注SEQ</th><th>階層</th><th>部番</th><th>丹愛</th><th>発注数</th><th>納期</th><th>個数理論値</th>`;
+    const COLS=`<th>フラグ</th><th>手配先</th><th>製番</th><th>発注SEQ</th><th>階層</th><th>部番</th><th>単位</th><th>発注数</th><th>納期</th><th>個数理論値</th>`;
     let trows='';
     for(const r of filtered){
       const flag=r['フラグ'];
@@ -302,7 +302,7 @@ function execSearch(){
       const seq=r['発注SEQ']!==null&&r['発注SEQ']!==undefined?esc(String(r['発注SEQ'])):'';
       const tier=r['階層']!==null&&r['階層']!==undefined?r['階層']:'';
       const buban=esc(r['部番']||'');
-      const tanai=esc(r['丹愛']||'');
+      const tanai=esc(r['単位']||'');
       const hacchu=Number(r['発注数'])||0;
       const nDate=esc(normalizeDate(r['納期']||''));
       const riron=r['個数理論値'];
