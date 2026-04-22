@@ -114,7 +114,7 @@
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" class="search-input"
-        placeholder="部番・製番・取引先・注文番号を入力（空欄可）..."
+        placeholder="部番・取引先・注文番号を入力（空欄可）..."
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <button class="clear-btn" id="clearBtn" onclick="clearSearch()" aria-label="クリア">✕</button>
     </div>
@@ -138,7 +138,7 @@
 <div id="content">
   <div class="placeholder" id="placeholder">
     <div class="icon">📦</div>
-    <p>部番・製番・取引先などを入力して「検索」またはEnterを押してください<br>キーワードなしで納期範囲だけでも検索できます</p>
+    <p>部番・取引先などを入力して「検索」またはEnterを押してください<br>キーワードなしで納期範囲だけでも検索できます</p>
     <div class="hint">💡 部番の一部でも検索できます／日付だけでも検索できます</div>
   </div>
   <div id="results" style="display:none"></div>
@@ -228,10 +228,9 @@ function execSearch(){
   const filtered=shukkaData.filter(item=>{
     if(keyword){
       const b=(item['部番']   ||'').toLowerCase();
-      const s=(item['製番']   ||'').toLowerCase();
       const t=(item['取引先'] ||'').toLowerCase();
       const c=(item['注文番号']||'').toLowerCase();
-      if(!b.includes(q)&&!s.includes(q)&&!t.includes(q)&&!c.includes(q))return false;
+      if(!b.includes(q)&&!t.includes(q)&&!c.includes(q))return false;
     }
     const d=toComparable(item['納期']||'');
     if(dateFrom&&d<dateFrom)return false;
@@ -239,12 +238,14 @@ function execSearch(){
     return true;
   });
 
-  /* 並び順：取引先 → 部番 → 納期 */
+  /* 並び順：取引先 → 製番 → 注文番号 → 納期 */
   filtered.sort((a,b)=>{
     const ta=a['取引先']||'', tb=b['取引先']||'';
     if(ta<tb)return-1;if(ta>tb)return 1;
-    const ba=a['部番']||'', bb=b['部番']||'';
-    if(ba<bb)return-1;if(ba>bb)return 1;
+    const sa=a['製番']||'',  sb=b['製番']||'';
+    if(sa<sb)return-1;if(sa>sb)return 1;
+    const ca=a['注文番号']||'', cb=b['注文番号']||'';
+    if(ca<cb)return-1;if(ca>cb)return 1;
     return toComparable(a['納期']||'').localeCompare(toComparable(b['納期']||''));
   });
 
