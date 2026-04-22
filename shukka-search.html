@@ -301,7 +301,7 @@
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" class="search-input"
-        placeholder="部番・取引先・注文番号を入力..."
+        placeholder="部番・製番・取引先・注文番号を入力（空欄可）..."
         autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
       <button class="clear-btn" id="clearBtn" onclick="clearSearch()" aria-label="クリア">✕</button>
     </div>
@@ -332,8 +332,8 @@
 <div id="content">
   <div class="placeholder" id="placeholder">
     <div class="icon">📦</div>
-    <p>部番を入力して「検索」またはEnterを押してください<br>納期の範囲を指定すると期間絞り込みができます</p>
-    <div class="hint">💡 部番の一部でも検索できます</div>
+    <p>部番・製番・取引先などを入力して「検索」またはEnterを押してください<br>キーワードなしで納期範囲だけでも検索できます</p>
+    <div class="hint">💡 部番の一部でも検索できます／日付だけでも検索できます</div>
   </div>
   <div id="results" style="display:none"></div>
 </div>
@@ -469,11 +469,14 @@ function execSearch() {
 
   const q = keyword.toLowerCase();
 
-  /* フィルタ：部番のみキーワード一致 + 納期範囲 */
+  /* フィルタ：キーワード（部番・製番・取引先・注文番号）+ 納期範囲 */
   const filtered = shukkaData.filter(item => {
     if (keyword) {
-      const buban = (item['部番'] || '').toLowerCase();
-      if (!buban.includes(q)) return false;
+      const buban    = (item['部番']   || '').toLowerCase();
+      const seiban   = (item['製番']   || '').toLowerCase();
+      const torihiki = (item['取引先'] || '').toLowerCase();
+      const chumon   = (item['注文番号'] || '').toLowerCase();
+      if (!buban.includes(q) && !seiban.includes(q) && !torihiki.includes(q) && !chumon.includes(q)) return false;
     }
     const d = toComparable(item['納期'] || '');
     if (dateFrom && d < dateFrom) return false;
@@ -530,12 +533,14 @@ function execSearch() {
 
       let trows = '';
       for (const r of rows) {
+        const seiban  = esc(r['製番'] || '');
         const nDate  = esc(normalizeDate(r['納期']   || ''));
         const siji   = Number(r['生産指示数']) || 0;
         const chumon = esc(r['注文番号'] || '');
         const uriage = r['売上合計数'];
         const lastUr = r['最終売上日'];
         const kenshu = r['検収合計数'];
+        const item2  = esc(r['品名2'] || r['ITEM_NAME2'] || '');
 
         const sijiStr = siji === 0
           ? `<span class="c-zero">0</span>`
@@ -554,17 +559,19 @@ function execSearch() {
         const buban = esc(r['部番'] || '');
         trows +=
           `<tr>` +
+          `<td class="td-left">${hi(seiban, q)}</td>` +
           `<td class="td-center">${chumonStr}</td>` +
           `<td class="td-left">${hi(buban, q)}</td>` +
           `<td class="td-center">${nDate}</td>` +
           `<td class="td-right">${sijiStr}</td>` +
+          `<td class="td-left">${item2 || '<span class="c-null">—</span>'}</td>` +
           `<td class="td-center">${lastUrStr}</td>` +
           `<td class="td-center">${uriageStr}</td>` +
           `<td class="td-right">${kenshuStr}</td>` +
           `</tr>`;
       }
 
-      const COLS = `<th>注文番号</th><th>部番</th><th>納期</th><th>生産指示数</th><th>最終売上日</th><th>売上合計数</th><th>検収合計数</th>`;
+      const COLS = `<th>製番</th><th>注文番号</th><th>部番</th><th>納期</th><th>生産指示数</th><th>ITEM_NAME2</th><th>最終売上日</th><th>売上合計数</th><th>検収合計数</th>`;
       buf.push(
         `<div class="table-outer">` +
         `<div class="table-wrap"><table>` +
