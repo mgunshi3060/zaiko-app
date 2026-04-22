@@ -238,14 +238,10 @@ function execSearch(){
     return true;
   });
 
-  /* 並び順：取引先 → 製番 → 注文番号 → 納期 */
+  /* 並び順：部番 → 納期 */
   filtered.sort((a,b)=>{
-    const ta=a['取引先']||'', tb=b['取引先']||'';
-    if(ta<tb)return-1;if(ta>tb)return 1;
-    const sa=a['製番']||'',  sb=b['製番']||'';
-    if(sa<sb)return-1;if(sa>sb)return 1;
-    const ca=a['注文番号']||'', cb=b['注文番号']||'';
-    if(ca<cb)return-1;if(ca>cb)return 1;
+    const ba=a['部番']||'', bb=b['部番']||'';
+    if(ba<bb)return-1;if(ba>bb)return 1;
     return toComparable(a['納期']||'').localeCompare(toComparable(b['納期']||''));
   });
 
