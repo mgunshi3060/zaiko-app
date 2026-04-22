@@ -267,12 +267,12 @@ function execSearch(){
     return true;
   });
 
-  /* 並び順：手配先→製番→発注SEQ */
+  /* 並び順：部番→納期→発注SEQ */
   filtered.sort((a,b)=>{
-    const ha=a['手配先']||'',hb=b['手配先']||'';
-    if(ha<hb)return-1;if(ha>hb)return 1;
-    const sa=a['製番']||'',sb=b['製番']||'';
-    if(sa<sb)return-1;if(sa>sb)return 1;
+    const ba=a['部番']||'',bb=b['部番']||'';
+    if(ba<bb)return-1;if(ba>bb)return 1;
+    const da=toComparable(a['納期']||''),db=toComparable(b['納期']||'');
+    if(da<db)return-1;if(da>db)return 1;
     return(Number(a['発注SEQ'])||0)-(Number(b['発注SEQ'])||0);
   });
 
