@@ -12,9 +12,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
 <meta name="googlebot" content="noindex, nofollow">
 <title>出荷検索</title>
@@ -24,279 +21,95 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   :root {
-    --bg:        #f4f6f8;
-    --surface:   #ffffff;
-    --border:    #d0d7de;
-    --accent:    #1a7f5a;
-    --header-bg: #1e2a38;
-    --text:      #1a1f27;
-    --text-muted:#5a6474;
-    --text-dim:  #9aa3af;
-    --header-h:  100px;
-    --status-h:  32px;
-    --font: '游ゴシック','Yu Gothic','YuGothic','Noto Sans JP',sans-serif;
+    --bg:#f4f6f8;--surface:#ffffff;--border:#d0d7de;--accent:#1a7f5a;
+    --header-bg:#1e2a38;--text:#1a1f27;--text-muted:#5a6474;--text-dim:#9aa3af;
+    --header-h:100px;--status-h:32px;
+    --font:'游ゴシック','Yu Gothic','YuGothic','Noto Sans JP',sans-serif;
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-  html, body {
-    min-height: 100%;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--font);
-    font-weight: 500;
-  }
-
-  /* ══ ヘッダー ══ */
-  .header {
-    position: fixed; top: 0; left: 0; right: 0;
-    height: var(--header-h);
-    background: var(--header-bg);
-    border-bottom: 1px solid #0a111a;
-    display: flex; flex-direction: column;
-    justify-content: center; gap: 6px;
-    padding: 8px 12px; z-index: 300;
-  }
-  .header-row { display: flex; align-items: center; gap: 6px; }
-
-  .search-wrap { flex: 1; position: relative; min-width: 0; }
-  .search-icon {
-    position: absolute; left: 10px; top: 50%;
-    transform: translateY(-50%); font-size: 13px;
-    pointer-events: none; color: #9aa3af;
-  }
-  .search-input {
-    width: 100%; height: 28px;
-    background: #2c3a4a; border: 1.5px solid #3e5068;
-    border-radius: 8px; color: #e8edf3;
-    font-family: var(--font); font-size: 12px;
-    padding: 0 28px 0 28px; outline: none;
-    transition: border-color .2s, box-shadow .2s;
-    -webkit-appearance: none;
-  }
-  .search-input:focus { border-color: #7dd3b0; box-shadow: 0 0 0 3px rgba(125,211,176,.18); }
-  .search-input::placeholder { color: #5a6474; font-size: 11px; }
-
-  .clear-btn {
-    position: absolute; right: 7px; top: 50%;
-    transform: translateY(-50%);
-    background: none; border: none; color: #5a6474;
-    font-size: 14px; cursor: pointer; padding: 4px 5px;
-    display: none; line-height: 1;
-  }
-  .clear-btn.visible { display: block; }
-
-  /* 日付入力行 */
-  .date-row {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 11px; color: #9aa3af;
-  }
-  .date-label { white-space: nowrap; font-size: 10px; color: #7dd3b0; font-weight: 700; }
-  .date-input {
-    height: 26px; background: #2c3a4a; border: 1.5px solid #3e5068;
-    border-radius: 7px; color: #e8edf3;
-    font-family: var(--font); font-size: 11px;
-    padding: 0 8px; outline: none; flex: 1; min-width: 0;
-    transition: border-color .2s;
-    -webkit-appearance: none;
-  }
-  .date-input:focus { border-color: #7dd3b0; }
-  .date-sep { color: #5a6474; font-size: 11px; flex-shrink: 0; }
-
-  /* 検索ボタン */
-  .search-btn {
-    flex-shrink: 0; height: 28px; padding: 0 14px;
-    background: var(--accent); color: #fff;
-    border: none; border-radius: 8px;
-    font-family: var(--font); font-size: 12px; font-weight: 700;
-    cursor: pointer; white-space: nowrap;
-    transition: opacity .15s;
-  }
-  .search-btn:active { opacity: 0.75; }
-
-  /* ══ ヘッダーボタン行 ══ */
-  .header-btn-row { display: flex; align-items: center; gap: 6px; }
-  .hdr-btn {
-    flex: 1; height: 24px;
-    border: none; border-radius: 7px;
-    font-size: 10px; font-weight: 700; font-family: var(--font);
-    cursor: pointer; white-space: nowrap;
-    display: flex; align-items: center; justify-content: center; gap: 4px;
-    transition: opacity .15s, transform .1s;
-  }
-  .hdr-btn:active { opacity: .75; transform: scale(.97); }
-  .hdr-btn-reload  { background: #2a7f5a; color: #e0f5ec; }
-  .hdr-btn-jisseki { background: #2a5a9f; color: #ddeeff; }
-  .hdr-btn-tanpin  { background: #5a4aa0; color: #e8e4ff; }
-  .hdr-btn-unit    { background: #1a5a70; color: #d8f0ff; }
-
-  /* ══ プログレスバー ══ */
-  #progressWrap {
-    position: fixed; top: var(--header-h); left: 0; right: 0;
-    height: 3px; background: #d0d7de; z-index: 400; display: none;
-  }
-  #progressBar { height: 100%; background: var(--accent); width: 0%; transition: width .15s; }
-
-  /* ══ ステータスバー ══ */
-  .status-bar {
-    position: fixed; top: var(--header-h); left: 0; right: 0;
-    height: var(--status-h); background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 8px; padding: 0 12px;
-    font-size: 10px; font-family: var(--font);
-    color: var(--text-muted); z-index: 290; overflow: hidden;
-  }
-  .status-bar .cnt { color: var(--accent); font-weight: 700; }
-  .status-tag {
-    background: #eef1f4; border: 1px solid var(--border);
-    border-radius: 4px; padding: 1px 7px; font-size: 10px; white-space: nowrap;
-  }
-  .spinner {
-    width: 12px; height: 12px;
-    border: 2px solid var(--border); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin .7s linear infinite;
-    display: inline-block; vertical-align: middle; flex-shrink: 0;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ══ コンテンツエリア ══ */
-  #content {
-    padding: calc(var(--header-h) + var(--status-h) + 14px) 12px 32px;
-  }
-
-  /* ══ 初期表示 ══ */
-  .placeholder {
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    gap: 14px; padding: 60px 24px; text-align: center;
-  }
-  .placeholder .icon { font-size: 48px; }
-  .placeholder p { font-size: 13px; color: var(--text-muted); line-height: 1.8; }
-  .hint {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 10px 16px;
-    font-size: 12px; color: var(--text-muted);
-    display: flex; align-items: center; gap: 8px;
-  }
-
-  /* ══ セクションタイトル ══ */
-  .section-title {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
-    color: var(--text-muted);
-    padding: 8px 0 6px;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 8px;
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  }
-  .section-title .badge {
-    background: var(--accent); color: #fff;
-    border-radius: 10px; padding: 1px 8px;
-    font-size: 10px; font-weight: 700;
-  }
-
-  .shukka-block {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; margin-bottom: 12px;
-  }
-  .shukka-block-header {
-    background: #2c3a4a; padding: 8px 14px;
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    border-radius: 8px 8px 0 0;
-  }
-  .table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: 0 0 8px 8px;
-  }
-  .shukka-buban { font-size: 13px; font-weight: 700; color: #ffffff; }
-  .shukka-torihiki-main { font-size: 13px; font-weight: 700; color: #ffffff; }
-  .shukka-torihiki {
-    font-size: 11px; color: #a8c8e8;
-    background: rgba(168,200,232,.15); border: 1px solid rgba(168,200,232,.3);
-    border-radius: 10px; padding: 2px 10px; white-space: nowrap;
-  }
-  .shukka-total-badge {
-    margin-left: auto;
-    font-size: 11px; color: #7dd3b0;
-    background: rgba(125,211,176,.18); border: 1px solid rgba(125,211,176,.3);
-    border-radius: 10px; padding: 2px 10px; white-space: nowrap;
-  }
-
-  /* ── テーブルラッパー ── */
-  .table-outer {
-    position: relative;
-  }
-
-  table {
-    border-collapse: separate; border-spacing: 0;
-    font-size: 12px; min-width: 100%;
-    font-family: var(--font); white-space: nowrap;
-  }
-  thead th {
-    background: #3a4f62; color: #c8d4e0;
-    font-weight: 700; font-size: 10px; letter-spacing: 0.04em;
-    padding: 7px 12px; border-bottom: 2px solid #1a2836;
-    border-right: 1px solid #2c3a4a; text-align: center;
-  }
-  thead th:last-child { border-right: none; }
-  tbody td {
-    padding: 8px 12px; border-bottom: 1px solid var(--border);
-    border-right: 1px solid var(--border); font-size: 12px;
-  }
-  tbody td:last-child { border-right: none; }
-  tbody tr:last-child td { border-bottom: none; }
-  .td-right { text-align: right; }
-  .td-center { text-align: center; }
-  .td-left { text-align: left; }
-
-  /* 数量の色 */
-  .c-qty  { color: #1a7f5a; font-weight: 700; }
-  .c-zero { color: var(--text-dim); }
-  .c-null { color: var(--text-dim); font-size: 10px; }
-
-  /* 売上済みバッジ */
-  .badge-sold {
-    display: inline-block;
-    background: rgba(26,127,90,.15); border: 1px solid rgba(26,127,90,.4);
-    color: #1a7f5a; border-radius: 4px;
-    font-size: 10px; font-weight: 700; padding: 1px 6px;
-  }
-  .badge-unsold {
-    display: inline-block;
-    background: rgba(90,100,116,.1); border: 1px solid var(--border);
-    color: var(--text-dim); border-radius: 4px;
-    font-size: 10px; padding: 1px 6px;
-  }
-
-  mark { border-radius: 2px; padding: 0 1px; }
-  .shukka-buban mark { background: rgba(255,220,80,.35); color: #ffffff; }
-
-  .no-result {
-    padding: 20px; text-align: center;
-    font-size: 12px; color: var(--text-dim);
-  }
-
-  /* ══ 集計サマリーカード ══ */
-  .summary-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 12px 16px; margin-bottom: 12px;
-    display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
-  }
-  .summary-item { display: flex; flex-direction: column; gap: 2px; }
-  .summary-label { font-size: 10px; color: var(--text-muted); }
-  .summary-value { font-size: 16px; font-weight: 700; color: var(--accent); }
-
-  /* スマホ縦 */
-  @media (max-width: 480px) and (orientation: portrait) {
-    tbody td, thead th { padding: 6px 8px; font-size: 10px; }
-    .summary-value { font-size: 14px; }
-  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-weight:500;}
+  .header{position:fixed;top:0;left:0;right:0;height:var(--header-h);background:var(--header-bg);
+    border-bottom:1px solid #0a111a;display:flex;flex-direction:column;justify-content:center;
+    gap:6px;padding:8px 12px;z-index:300;}
+  .header-row{display:flex;align-items:center;gap:6px;}
+  .search-wrap{flex:1;position:relative;min-width:0;}
+  .search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;pointer-events:none;color:#9aa3af;}
+  .search-input{width:100%;height:28px;background:#2c3a4a;border:1.5px solid #3e5068;border-radius:8px;
+    color:#e8edf3;font-family:var(--font);font-size:12px;padding:0 28px 0 28px;outline:none;
+    transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
+  .search-input:focus{border-color:#7dd3b0;box-shadow:0 0 0 3px rgba(125,211,176,.18);}
+  .search-input::placeholder{color:#5a6474;font-size:11px;}
+  .clear-btn{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:none;border:none;
+    color:#5a6474;font-size:14px;cursor:pointer;padding:4px 5px;display:none;line-height:1;}
+  .clear-btn.visible{display:block;}
+  .date-row{display:flex;align-items:center;gap:6px;}
+  .date-label{white-space:nowrap;font-size:10px;color:#7dd3b0;font-weight:700;}
+  .date-input{height:26px;background:#2c3a4a;border:1.5px solid #3e5068;border-radius:7px;color:#e8edf3;
+    font-family:var(--font);font-size:11px;padding:0 8px;outline:none;flex:1;min-width:0;
+    transition:border-color .2s;-webkit-appearance:none;}
+  .date-input:focus{border-color:#7dd3b0;}
+  .date-sep{color:#5a6474;font-size:11px;flex-shrink:0;}
+  .search-btn{flex-shrink:0;height:28px;padding:0 14px;background:var(--accent);color:#fff;border:none;
+    border-radius:8px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:opacity .15s;}
+  .search-btn:active{opacity:0.75;}
+  .header-btn-row{display:flex;align-items:center;gap:6px;}
+  .hdr-btn{flex:1;height:24px;border:none;border-radius:7px;font-size:10px;font-weight:700;
+    font-family:var(--font);cursor:pointer;white-space:nowrap;display:flex;align-items:center;
+    justify-content:center;gap:4px;transition:opacity .15s,transform .1s;}
+  .hdr-btn:active{opacity:.75;transform:scale(.97);}
+  .hdr-btn-reload {background:#2a7f5a;color:#e0f5ec;}
+  .hdr-btn-jisseki{background:#2a5a9f;color:#ddeeff;}
+  .hdr-btn-tanpin {background:#5a4aa0;color:#e8e4ff;}
+  .hdr-btn-unit   {background:#1a5a70;color:#d8f0ff;}
+  #progressWrap{position:fixed;top:var(--header-h);left:0;right:0;height:3px;background:#d0d7de;z-index:400;display:none;}
+  #progressBar{height:100%;background:var(--accent);width:0%;transition:width .15s;}
+  .status-bar{position:fixed;top:var(--header-h);left:0;right:0;height:var(--status-h);background:var(--surface);
+    border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 12px;
+    font-size:10px;font-family:var(--font);color:var(--text-muted);z-index:290;overflow:hidden;}
+  .status-bar .cnt{color:var(--accent);font-weight:700;}
+  .status-tag{background:#eef1f4;border:1px solid var(--border);border-radius:4px;padding:1px 7px;font-size:10px;white-space:nowrap;}
+  .spinner{width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--accent);
+    border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;flex-shrink:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  #content{padding:calc(var(--header-h) + var(--status-h) + 14px) 12px 32px;}
+  .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:14px;padding:60px 24px;text-align:center;}
+  .placeholder .icon{font-size:48px;}
+  .placeholder p{font-size:13px;color:var(--text-muted);line-height:1.8;}
+  .hint{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 16px;
+    font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:8px;}
+  .section-title{font-size:11px;font-weight:700;letter-spacing:0.08em;color:var(--text-muted);
+    padding:8px 0 6px;border-bottom:2px solid var(--border);margin-bottom:8px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .section-title .badge{background:var(--accent);color:#fff;border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700;}
+  .result-block{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px;overflow:hidden;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{border-collapse:separate;border-spacing:0;font-size:12px;min-width:100%;font-family:var(--font);white-space:nowrap;}
+  thead th{background:#3a4f62;color:#c8d4e0;font-weight:700;font-size:10px;letter-spacing:0.04em;
+    padding:7px 12px;border-bottom:2px solid #1a2836;border-right:1px solid #2c3a4a;text-align:center;}
+  thead th:last-child{border-right:none;}
+  tbody td{padding:8px 12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);font-size:12px;}
+  tbody td:last-child{border-right:none;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:#f0f4f8;}
+  .td-right{text-align:right;}.td-center{text-align:center;}.td-left{text-align:left;}
+  .c-qty{color:#1a7f5a;font-weight:700;}.c-zero{color:var(--text-dim);}.c-null{color:var(--text-dim);font-size:10px;}
+  .badge-sold{display:inline-block;background:rgba(26,127,90,.15);border:1px solid rgba(26,127,90,.4);
+    color:#1a7f5a;border-radius:4px;font-size:10px;font-weight:700;padding:1px 6px;}
+  .badge-unsold{display:inline-block;background:rgba(90,100,116,.1);border:1px solid var(--border);
+    color:var(--text-dim);border-radius:4px;font-size:10px;padding:1px 6px;}
+  mark{background:rgba(255,220,80,.55);border-radius:2px;padding:0 1px;}
+  .no-result{padding:20px;text-align:center;font-size:12px;color:var(--text-dim);}
+  .summary-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+    padding:12px 16px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;}
+  .summary-item{display:flex;flex-direction:column;gap:2px;}
+  .summary-label{font-size:10px;color:var(--text-muted);}
+  .summary-value{font-size:16px;font-weight:700;color:var(--accent);}
+  @media(max-width:480px) and (orientation:portrait){tbody td,thead th{padding:6px 8px;font-size:10px;}.summary-value{font-size:14px;}}
 </style>
 </head>
 <body>
-
 <div class="header">
-  <!-- 第1段：部番検索 -->
   <div class="header-row">
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -307,28 +120,21 @@
     </div>
     <button class="search-btn" onclick="execSearch()">検索</button>
   </div>
-  <!-- 第2段：日付範囲（納期） -->
   <div class="date-row">
     <span class="date-label">納期</span>
     <input type="date" id="dateFrom" class="date-input">
     <span class="date-sep">〜</span>
     <input type="date" id="dateTo" class="date-input">
   </div>
-  <!-- 第3段：ボタン行 -->
   <div class="header-btn-row">
-    <button class="hdr-btn hdr-btn-reload" onclick="forceReload()">🔄 強制読込</button>
+    <button class="hdr-btn hdr-btn-reload"  onclick="forceReload()">🔄 強制読込</button>
     <button class="hdr-btn hdr-btn-jisseki" onclick="window.open('./jisseki-search.html','_blank')">📊 実績検索</button>
-    <button class="hdr-btn hdr-btn-tanpin" onclick="window.open('https://mgunshi3060.github.io/zaiko-app/tanpin-search.html','_blank')">⚙️ 単品検索</button>
-    <button class="hdr-btn hdr-btn-unit" onclick="window.open('https://mgunshi3060.github.io/zaiko-app/unit-search.html','_blank')">🔍 ユニット検索</button>
+    <button class="hdr-btn hdr-btn-tanpin"  onclick="window.open('https://mgunshi3060.github.io/zaiko-app/tanpin-search.html','_blank')">⚙️ 単品検索</button>
+    <button class="hdr-btn hdr-btn-unit"    onclick="window.open('https://mgunshi3060.github.io/zaiko-app/unit-search.html','_blank')">🔍 ユニット検索</button>
   </div>
 </div>
-
 <div id="progressWrap"><div id="progressBar"></div></div>
-
-<div class="status-bar">
-  <span id="statusMsg"><span class="spinner"></span>&nbsp;データを読み込んでいます...</span>
-</div>
-
+<div class="status-bar"><span id="statusMsg"><span class="spinner"></span>&nbsp;データを読み込んでいます...</span></div>
 <div id="content">
   <div class="placeholder" id="placeholder">
     <div class="icon">📦</div>
@@ -337,287 +143,194 @@
   </div>
   <div id="results" style="display:none"></div>
 </div>
-
 <script>
 'use strict';
+let shukkaData=[],pgTimer,dataReady=false,jsonUpdatedAt='';
 
-let shukkaData = [];
-let pgTimer;
-let dataReady  = false;
-let jsonUpdatedAt = '';
-
-/* ── Last-Modified フォーマット ── */
-function formatLastModified(headerVal) {
-  if (!headerVal) return '';
-  const d = new Date(headerVal);
-  if (isNaN(d)) return '';
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+function formatLastModified(v){
+  if(!v)return'';const d=new Date(v);if(isNaN(d))return'';
+  const p=n=>String(n).padStart(2,'0');
+  return`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
+function normalizeDate(s){return s?String(s).replace(/-/g,'/'):''}
+function toComparable(s){return s?String(s).replace(/\//g,'-').slice(0,10):''}
 
-/* ── 日付を YYYY/MM/DD 形式に正規化 ── */
-function normalizeDate(s) {
-  if (!s) return '';
-  return String(s).replace(/-/g, '/');
-}
-
-/* ── 日付比較用 YYYY-MM-DD（既にその形式ならそのまま） ── */
-function toComparable(s) {
-  if (!s) return '';
-  // YYYY-MM-DD または YYYY/MM/DD → YYYY-MM-DD
-  return String(s).replace(/\//g, '-').slice(0, 10);
-}
-
-/* ── JSONファイル読み込み（自動） ── */
-(async function autoLoad() {
+(async function autoLoad(){
   setProgress(true);
-  try {
-    const r = await fetch('./shukka.json');
-    if (!r.ok) throw 'shukka ' + r.status;
-    jsonUpdatedAt = formatLastModified(r.headers.get('Last-Modified'));
-    const j = await r.json();
-    shukkaData = Array.isArray(j) ? j : [];
-    dataReady  = true;
-    setProgress(false);
-    updateStatus();
-    setDefaultDates();
-  } catch(err) {
-    setProgress(false);
-    setStatus(`❌ 読み込み失敗: ${err}`);
-  }
+  try{
+    const r=await fetch('./shukka.json');
+    if(!r.ok)throw'shukka '+r.status;
+    jsonUpdatedAt=formatLastModified(r.headers.get('Last-Modified'));
+    const j=await r.json();
+    shukkaData=Array.isArray(j)?j:[];
+    dataReady=true;setProgress(false);updateStatus();setDefaultDates();
+  }catch(err){setProgress(false);setStatus(`❌ 読み込み失敗: ${err}`);}
 })();
 
-/* ── デフォルト日付範囲：前月1日〜来月末 ── */
-function setDefaultDates() {
-  const today = new Date();
-  const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  // 前月1日
-  const from = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-  // 来月末（来月+1月の0日 = 来月の末日）
-  const to   = new Date(today.getFullYear(), today.getMonth() + 2, 0);
-  document.getElementById('dateFrom').value = fmt(from);
-  document.getElementById('dateTo').value   = fmt(to);
+function setDefaultDates(){
+  const t=new Date();
+  const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('dateFrom').value=fmt(new Date(t.getFullYear(),t.getMonth()-1,1));
+  document.getElementById('dateTo').value=fmt(new Date(t.getFullYear(),t.getMonth()+2,0));
 }
 
-/* ── JSON強制読込 ── */
-async function forceReload() {
-  dataReady = false;
-  setProgress(true);
+async function forceReload(){
+  dataReady=false;setProgress(true);
   setStatus('<span class="spinner"></span>&nbsp;データを読み込んでいます...');
-  const t = Date.now();
-  try {
-    const r = await fetch('./shukka.json?_=' + t, { cache: 'no-store' });
-    if (!r.ok) throw 'shukka ' + r.status;
-    jsonUpdatedAt = formatLastModified(r.headers.get('Last-Modified'));
-    const j = await r.json();
-    shukkaData = Array.isArray(j) ? j : [];
-    dataReady  = true;
-    setProgress(false);
-    updateStatus();
-    setDefaultDates();
-  } catch(err) {
-    setProgress(false);
-    setStatus(`❌ 読み込み失敗: ${err}`);
-  }
+  const t=Date.now();
+  try{
+    const r=await fetch('./shukka.json?_='+t,{cache:'no-store'});
+    if(!r.ok)throw'shukka '+r.status;
+    jsonUpdatedAt=formatLastModified(r.headers.get('Last-Modified'));
+    const j=await r.json();
+    shukkaData=Array.isArray(j)?j:[];
+    dataReady=true;setProgress(false);updateStatus();setDefaultDates();
+  }catch(err){setProgress(false);setStatus(`❌ 読み込み失敗: ${err}`);}
 }
 
-/* ── ステータス更新 ── */
-function updateStatus() {
-  let h = `出荷: <span class="cnt">${shukkaData.length.toLocaleString()}</span>件`;
-  if (jsonUpdatedAt) h += `&nbsp;<span class="status-tag">🕒${jsonUpdatedAt}</span>`;
-  h += `&nbsp;—&nbsp;検索ボタンまたはEnterで検索`;
-  setStatus(h);
+function updateStatus(){
+  let h=`出荷: <span class="cnt">${shukkaData.length.toLocaleString()}</span>件`;
+  if(jsonUpdatedAt)h+=`&nbsp;<span class="status-tag">🕒${jsonUpdatedAt}</span>`;
+  h+=`&nbsp;—&nbsp;検索ボタンまたはEnterで検索`;setStatus(h);
 }
 
-/* ── 入力イベント ── */
-document.getElementById('searchInput').addEventListener('input', function() {
-  document.getElementById('clearBtn').classList.toggle('visible', this.value.length > 0);
+document.getElementById('searchInput').addEventListener('input',function(){
+  document.getElementById('clearBtn').classList.toggle('visible',this.value.length>0);
 });
-document.getElementById('searchInput').addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') { e.preventDefault(); execSearch(); }
+['searchInput','dateFrom','dateTo'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();execSearch();}});
 });
 
-function clearSearch() {
-  document.getElementById('searchInput').value = '';
+function clearSearch(){
+  document.getElementById('searchInput').value='';
   document.getElementById('clearBtn').classList.remove('visible');
-  document.getElementById('results').style.display = 'none';
-  document.getElementById('results').innerHTML = '';
-  document.getElementById('placeholder').style.display = 'flex';
-  if (dataReady) updateStatus();
+  document.getElementById('results').style.display='none';
+  document.getElementById('results').innerHTML='';
+  document.getElementById('placeholder').style.display='flex';
+  if(dataReady)updateStatus();
 }
 
-/* ── 検索実行 ── */
-function execSearch() {
-  if (!dataReady) { setStatus('⏳ データ読み込み中です...'); return; }
+function execSearch(){
+  if(!dataReady){setStatus('⏳ データ読み込み中です...');return;}
+  const keyword=document.getElementById('searchInput').value.trim();
+  const dateFrom=document.getElementById('dateFrom').value;
+  const dateTo=document.getElementById('dateTo').value;
+  const resultsDiv=document.getElementById('results');
+  const placeholder=document.getElementById('placeholder');
 
-  const keyword     = document.getElementById('searchInput').value.trim();
-  const dateFrom    = document.getElementById('dateFrom').value;   // YYYY-MM-DD
-  const dateTo      = document.getElementById('dateTo').value;
-  const resultsDiv  = document.getElementById('results');
-  const placeholder = document.getElementById('placeholder');
-
-  if (!keyword && !dateFrom && !dateTo) {
-    placeholder.style.display = 'flex';
-    resultsDiv.style.display = 'none';
-    resultsDiv.innerHTML = '';
-    return;
+  if(!keyword&&!dateFrom&&!dateTo){
+    placeholder.style.display='flex';resultsDiv.style.display='none';resultsDiv.innerHTML='';return;
   }
+  placeholder.style.display='none';resultsDiv.style.display='block';
+  const q=keyword.toLowerCase();
 
-  placeholder.style.display = 'none';
-  resultsDiv.style.display = 'block';
-
-
-  const q = keyword.toLowerCase();
-
-  /* フィルタ：キーワード（部番・製番・取引先・注文番号）+ 納期範囲 */
-  const filtered = shukkaData.filter(item => {
-    if (keyword) {
-      const buban    = (item['部番']   || '').toLowerCase();
-      const seiban   = (item['製番']   || '').toLowerCase();
-      const torihiki = (item['取引先'] || '').toLowerCase();
-      const chumon   = (item['注文番号'] || '').toLowerCase();
-      if (!buban.includes(q) && !seiban.includes(q) && !torihiki.includes(q) && !chumon.includes(q)) return false;
+  /* フィルタ */
+  const filtered=shukkaData.filter(item=>{
+    if(keyword){
+      const b=(item['部番']   ||'').toLowerCase();
+      const s=(item['製番']   ||'').toLowerCase();
+      const t=(item['取引先'] ||'').toLowerCase();
+      const c=(item['注文番号']||'').toLowerCase();
+      if(!b.includes(q)&&!s.includes(q)&&!t.includes(q)&&!c.includes(q))return false;
     }
-    const d = toComparable(item['納期'] || '');
-    if (dateFrom && d < dateFrom) return false;
-    if (dateTo   && d > dateTo)   return false;
+    const d=toComparable(item['納期']||'');
+    if(dateFrom&&d<dateFrom)return false;
+    if(dateTo  &&d>dateTo)  return false;
     return true;
   });
 
-  const buf = [];
+  /* 並び順：取引先 → 製番 → 注文番号 → 納期 */
+  filtered.sort((a,b)=>{
+    const ta=a['取引先']||'', tb=b['取引先']||'';
+    if(ta<tb)return-1;if(ta>tb)return 1;
+    const sa=a['製番']||'',  sb=b['製番']||'';
+    if(sa<sb)return-1;if(sa>sb)return 1;
+    const ca=a['注文番号']||'', cb=b['注文番号']||'';
+    if(ca<cb)return-1;if(ca>cb)return 1;
+    return toComparable(a['納期']||'').localeCompare(toComparable(b['納期']||''));
+  });
 
-  /* ── サマリーカード ── */
-  const totalSiji = filtered.reduce((s, r) => s + (Number(r['生産指示数']) || 0), 0);
-  const soldCount = filtered.filter(r => r['売上合計数'] !== null && r['売上合計数'] !== undefined).length;
+  const buf=[];
+
+  /* サマリー */
+  const totalSiji=filtered.reduce((s,r)=>s+(Number(r['生産指示数'])||0),0);
+  const soldCount=filtered.filter(r=>r['売上合計数']!==null&&r['売上合計数']!==undefined).length;
+  const torihikiSet=new Set(filtered.map(r=>r['取引先']||''));
   buf.push(
-    `<div class="summary-card">` +
-    `<div class="summary-item"><div class="summary-label">件数</div><div class="summary-value">${filtered.length.toLocaleString()}</div></div>` +
-    `<div class="summary-item"><div class="summary-label">生産指示数合計</div><div class="summary-value">${totalSiji.toLocaleString()}</div></div>` +
-    `<div class="summary-item"><div class="summary-label">売上済</div><div class="summary-value">${soldCount.toLocaleString()}</div></div>` +
+    `<div class="summary-card">`+
+    `<div class="summary-item"><div class="summary-label">件数</div><div class="summary-value">${filtered.length.toLocaleString()}</div></div>`+
+    `<div class="summary-item"><div class="summary-label">生産指示数合計</div><div class="summary-value">${totalSiji.toLocaleString()}</div></div>`+
+    `<div class="summary-item"><div class="summary-label">売上済</div><div class="summary-value">${soldCount.toLocaleString()}</div></div>`+
+    `<div class="summary-item"><div class="summary-label">取引先数</div><div class="summary-value">${torihikiSet.size}</div></div>`+
     `</div>`
   );
 
-  /* ── 出荷情報セクション ── */
   buf.push(`<div class="section-title">📦 出荷情報 <span class="badge">${filtered.length}件</span></div>`);
 
-  if (filtered.length === 0) {
+  if(filtered.length===0){
     buf.push(`<div class="no-result">該当する出荷データがありません</div>`);
-  } else {
-    /* 取引先ごとにグループ化 */
-    const groups = {};
-    for (const row of filtered) {
-      const key = (row['取引先'] || '');
-      if (!groups[key]) groups[key] = { torihiki: row['取引先'] || '', rows: [] };
-      groups[key].rows.push(row);
+  }else{
+    const COLS=`<th>取引先</th><th>製番</th><th>注文番号</th><th>部番</th><th>納期</th><th>生産指示数</th><th>備考</th><th>最終売上日</th><th>売上合計数</th><th>検収合計数</th>`;
+    let trows='';
+    for(const r of filtered){
+      const torihiki=esc(r['取引先'] ||'');
+      const seiban  =esc(r['製番']   ||'');
+      const chumon  =esc(r['注文番号']||'');
+      const buban   =esc(r['部番']   ||'');
+      const nDate   =esc(normalizeDate(r['納期']||''));
+      const siji    =Number(r['生産指示数'])||0;
+      const item2   =esc(r['品名2']||r['ITEM_NAME2']||'');
+      const lastUr  =r['最終売上日'];
+      const uriage  =r['売上合計数'];
+      const kenshu  =r['検収合計数'];
+
+      const sijiStr=siji===0
+        ?`<span class="c-zero">0</span>`
+        :`<span class="c-qty">${siji.toLocaleString()}</span>`;
+      const uriageStr=(uriage!==null&&uriage!==undefined)
+        ?`<span class="badge-sold">${Number(uriage).toLocaleString()}</span>`
+        :`<span class="badge-unsold">—</span>`;
+      const lastUrStr=lastUr?esc(normalizeDate(String(lastUr))):`<span class="c-null">—</span>`;
+      const kenshuStr=(kenshu!==null&&kenshu!==undefined)
+        ?Number(kenshu).toLocaleString()
+        :`<span class="c-null">—</span>`;
+
+      trows+=`<tr>`+
+        `<td class="td-left">${hi(torihiki,q)}</td>`+
+        `<td class="td-left">${hi(seiban,q)}</td>`+
+        `<td class="td-center">${chumon||'<span class="c-null">—</span>'}</td>`+
+        `<td class="td-left">${hi(buban,q)}</td>`+
+        `<td class="td-center">${nDate}</td>`+
+        `<td class="td-right">${sijiStr}</td>`+
+        `<td class="td-left">${item2||'<span class="c-null">—</span>'}</td>`+
+        `<td class="td-center">${lastUrStr}</td>`+
+        `<td class="td-center">${uriageStr}</td>`+
+        `<td class="td-right">${kenshuStr}</td>`+
+        `</tr>`;
     }
-
-    /* 取引先ごとに表示（納期昇順） */
-    const sortedKeys = Object.keys(groups).sort();
-    for (const key of sortedKeys) {
-      const { torihiki, rows } = groups[key];
-      rows.sort((a, b) => {
-        const da = toComparable(a['納期'] || '');
-        const db = toComparable(b['納期'] || '');
-        return da < db ? -1 : da > db ? 1 : 0;
-      });
-
-      const totalSijiGroup = rows.reduce((s, r) => s + (Number(r['生産指示数']) || 0), 0);
-
-      buf.push(
-        `<div class="shukka-block">` +
-        `<div class="shukka-block-header">` +
-        `<span class="shukka-torihiki-main">${esc(torihiki || '（取引先なし）')}</span>` +
-        `<span class="shukka-total-badge">指示数合計 ${totalSijiGroup.toLocaleString()}</span>` +
-        `</div>`
-      );
-
-      let trows = '';
-      for (const r of rows) {
-        const seiban  = esc(r['製番'] || '');
-        const nDate  = esc(normalizeDate(r['納期']   || ''));
-        const siji   = Number(r['生産指示数']) || 0;
-        const chumon = esc(r['注文番号'] || '');
-        const uriage = r['売上合計数'];
-        const lastUr = r['最終売上日'];
-        const kenshu = r['検収合計数'];
-        const item2  = esc(r['品名2'] || r['ITEM_NAME2'] || '');
-
-        const sijiStr = siji === 0
-          ? `<span class="c-zero">0</span>`
-          : `<span class="c-qty">${siji.toLocaleString()}</span>`;
-
-        const uriageStr = uriage !== null && uriage !== undefined
-          ? `<span class="badge-sold">${Number(uriage).toLocaleString()}</span>`
-          : `<span class="badge-unsold">—</span>`;
-
-        const lastUrStr = lastUr ? esc(normalizeDate(lastUr)) : `<span class="c-null">—</span>`;
-        const kenshuStr = kenshu !== null && kenshu !== undefined
-          ? Number(kenshu).toLocaleString()
-          : `<span class="c-null">—</span>`;
-        const chumonStr = chumon || `<span class="c-null">—</span>`;
-
-        const buban = esc(r['部番'] || '');
-        trows +=
-          `<tr>` +
-          `<td class="td-left">${hi(seiban, q)}</td>` +
-          `<td class="td-center">${chumonStr}</td>` +
-          `<td class="td-left">${hi(buban, q)}</td>` +
-          `<td class="td-center">${nDate}</td>` +
-          `<td class="td-right">${sijiStr}</td>` +
-          `<td class="td-left">${item2 || '<span class="c-null">—</span>'}</td>` +
-          `<td class="td-center">${lastUrStr}</td>` +
-          `<td class="td-center">${uriageStr}</td>` +
-          `<td class="td-right">${kenshuStr}</td>` +
-          `</tr>`;
-      }
-
-      const COLS = `<th>製番</th><th>注文番号</th><th>部番</th><th>納期</th><th>生産指示数</th><th>備考</th><th>最終売上日</th><th>売上合計数</th><th>検収合計数</th>`;
-      buf.push(
-        `<div class="table-outer">` +
-        `<div class="table-wrap"><table>` +
-        `<thead><tr>${COLS}</tr></thead>` +
-        `<tbody>${trows}</tbody>` +
-        `</table></div></div></div>`
-      );
-    }
+    buf.push(`<div class="result-block"><div class="table-wrap"><table><thead><tr>${COLS}</tr></thead><tbody>${trows}</tbody></table></div></div>`);
   }
 
-  resultsDiv.innerHTML = buf.join('');
-
-  /* ステータス更新 */
-  let sh = `出荷: <span class="cnt">${filtered.length}</span>件&nbsp;`
-         + `<span class="status-tag">🔍 "${esc(keyword || '全件')}"</span>`;
-  if (dateFrom || dateTo) {
-    sh += `&nbsp;<span class="status-tag">📅 ${dateFrom || '—'} 〜 ${dateTo || '—'}</span>`;
-  }
-  if (jsonUpdatedAt) sh += `&nbsp;<span class="status-tag">🕒${jsonUpdatedAt}</span>`;
+  resultsDiv.innerHTML=buf.join('');
+  let sh=`出荷: <span class="cnt">${filtered.length}</span>件&nbsp;`+`<span class="status-tag">🔍 "${esc(keyword||'全件')}"</span>`;
+  if(dateFrom||dateTo)sh+=`&nbsp;<span class="status-tag">📅 ${dateFrom||'—'} 〜 ${dateTo||'—'}</span>`;
+  if(jsonUpdatedAt)sh+=`&nbsp;<span class="status-tag">🕒${jsonUpdatedAt}</span>`;
   setStatus(sh);
 }
 
-/* ── プログレスバー ── */
-function setProgress(show) {
-  const wrap = document.getElementById('progressWrap');
-  const bar  = document.getElementById('progressBar');
+function setProgress(show){
+  const wrap=document.getElementById('progressWrap'),bar=document.getElementById('progressBar');
   clearInterval(pgTimer);
-  if (show) {
-    wrap.style.display = 'block'; let w = 5; bar.style.width = w + '%';
-    pgTimer = setInterval(() => { w = Math.min(w + Math.random() * 12, 88); bar.style.width = w + '%'; }, 150);
-  } else {
-    bar.style.width = '100%';
-    setTimeout(() => { wrap.style.display = 'none'; bar.style.width = '0%'; }, 350);
-  }
+  if(show){wrap.style.display='block';let w=5;bar.style.width=w+'%';
+    pgTimer=setInterval(()=>{w=Math.min(w+Math.random()*12,88);bar.style.width=w+'%';},150);
+  }else{bar.style.width='100%';setTimeout(()=>{wrap.style.display='none';bar.style.width='0%';},350);}
 }
-
-function setStatus(html) { document.getElementById('statusMsg').innerHTML = html; }
-
-/* ── ユーティリティ ── */
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function hi(escapedText, query) {
-  if (!query) return escapedText;
-  const q = esc(query).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  return escapedText.replace(new RegExp(q,'gi'), m => `<mark>${m}</mark>`);
+function setStatus(html){document.getElementById('statusMsg').innerHTML=html;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function hi(t,q){
+  if(!q)return t;
+  const qe=esc(q).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return t.replace(new RegExp(qe,'gi'),m=>`<mark>${m}</mark>`);
 }
 </script>
 </body>
