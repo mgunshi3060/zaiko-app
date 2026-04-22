@@ -107,6 +107,8 @@
     color:var(--text-dim);border-radius:4px;font-size:10px;padding:1px 6px;}
   .tier-badge{display:inline-block;background:#eef1f4;border:1px solid var(--border);color:var(--text-muted);
     border-radius:3px;font-size:9px;padding:0 5px;min-width:20px;text-align:center;}
+  .badge-nyuuka{display:inline-block;background:rgba(26,90,112,.15);border:1px solid rgba(26,90,112,.4);
+    color:#1a5a70;border-radius:4px;font-size:10px;font-weight:700;padding:1px 6px;}
   mark{background:rgba(255,220,80,.55);border-radius:2px;padding:0 1px;}
   .no-result{padding:20px;text-align:center;font-size:12px;color:var(--text-dim);}
   .summary-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;
@@ -267,12 +269,12 @@ function execSearch(){
     return true;
   });
 
-  /* 並び順：部番→納期→発注SEQ */
+  /* 並び順：手配先→製番→発注SEQ */
   filtered.sort((a,b)=>{
-    const ba=a['部番']||'',bb=b['部番']||'';
-    if(ba<bb)return-1;if(ba>bb)return 1;
-    const da=toComparable(a['納期']||''),db=toComparable(b['納期']||'');
-    if(da<db)return-1;if(da>db)return 1;
+    const ha=a['手配先']||'',hb=b['手配先']||'';
+    if(ha<hb)return-1;if(ha>hb)return 1;
+    const sa=a['製番']||'',sb=b['製番']||'';
+    if(sa<sb)return-1;if(sa>sb)return 1;
     return(Number(a['発注SEQ'])||0)-(Number(b['発注SEQ'])||0);
   });
 
@@ -293,7 +295,7 @@ function execSearch(){
   if(filtered.length===0){
     buf.push(`<div class="no-result">該当する発注データがありません</div>`);
   }else{
-    const COLS=`<th>フラグ</th><th>手配先</th><th>製番</th><th>発注SEQ</th><th>階層</th><th>部番</th><th>単位</th><th>発注数</th><th>納期</th><th>個数理論値</th><th>受入実績数</th>`;
+    const COLS=`<th>フラグ</th><th>手配先</th><th>製番</th><th>発注SEQ</th><th>階層</th><th>部番</th><th>単位</th><th>発注数</th><th>納期</th><th>最終受入日</th><th>個数理論値</th><th>受入実績数</th>`;
     let trows='';
     for(const r of filtered){
       const flag=r['フラグ'];
@@ -302,9 +304,10 @@ function execSearch(){
       const seq=r['発注SEQ']!==null&&r['発注SEQ']!==undefined?esc(String(r['発注SEQ'])):'';
       const tier=r['階層']!==null&&r['階層']!==undefined?r['階層']:'';
       const buban=esc(r['部番']||'');
-      const tanai=esc(r['単位']||'');
+      const tani=esc(r['単位']||'');
       const hacchu=Number(r['発注数'])||0;
       const nDate=esc(normalizeDate(r['納期']||''));
+      const lastNyuu=r['最終受入日'];
       const riron=r['個数理論値'];
       const nyuuka=r['受入実績数'];
       const flagStr=(flag!==null&&flag!==undefined&&String(flag).trim()!=='')
@@ -313,7 +316,8 @@ function execSearch(){
       const tierStr=tier!==''?`<span class="tier-badge">${esc(String(tier))}</span>`:`<span class="c-null">—</span>`;
       const hacchuStr=hacchu===0?`<span class="c-zero">0</span>`:`<span class="c-qty">${hacchu.toLocaleString()}</span>`;
       const rironStr=(riron!==null&&riron!==undefined)?Number(riron).toLocaleString():`<span class="c-null">—</span>`;
-      const nyuukaStr=(nyuuka!==null&&nyuuka!==undefined)?`<span class="c-qty">${Number(nyuuka).toLocaleString()}</span>`:`<span class="c-null">—</span>`;
+      const lastNyuuStr=lastNyuu?esc(normalizeDate(String(lastNyuu))):`<span class="c-null">—</span>`;
+      const nyuukaStr=(nyuuka!==null&&nyuuka!==undefined)?`<span class="badge-nyuuka">${Number(nyuuka).toLocaleString()}</span>`:`<span class="c-null">—</span>`;
       trows+=`<tr>`+
         `<td class="td-center">${flagStr}</td>`+
         `<td class="td-left">${hi(haichi,q)}</td>`+
@@ -321,9 +325,10 @@ function execSearch(){
         `<td class="td-center">${seq||'<span class="c-null">—</span>'}</td>`+
         `<td class="td-center">${tierStr}</td>`+
         `<td class="td-left">${hi(buban,q)}</td>`+
-        `<td class="td-left">${hi(tanai,q)}</td>`+
+        `<td class="td-center">${tani||'<span class="c-null">—</span>'}</td>`+
         `<td class="td-right">${hacchuStr}</td>`+
         `<td class="td-center">${nDate}</td>`+
+        `<td class="td-center">${lastNyuuStr}</td>`+
         `<td class="td-right">${rironStr}</td>`+
         `<td class="td-right">${nyuukaStr}</td>`+
         `</tr>`;
