@@ -1,0 +1,265 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);font-size:13px;background:var(--color-background-tertiary);color:var(--color-text-primary)}
+.header{background:#1a2332;padding:10px 16px;display:flex;gap:8px;align-items:center}
+.search-box{flex:1;background:#0d1623;border:1px solid #2a3a52;border-radius:6px;display:flex;align-items:center;padding:0 10px;gap:8px}
+.search-box input{flex:1;background:transparent;border:none;outline:none;color:#e0e8f0;font-size:13px;padding:8px 0}
+.search-box input::placeholder{color:#4a6080}
+.tag{background:#1e3a5f;color:#5ab0ff;border-radius:12px;padding:2px 10px;font-size:12px;display:flex;align-items:center;gap:4px}
+.tag .x{cursor:pointer;color:#4a80b0;font-size:14px}
+.btn-search{background:#0f7a5a;color:#fff;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;font-size:13px;font-weight:500;white-space:nowrap}
+.btn-search:hover{background:#0d6b4f}
+.subheader{background:#1a2332;padding:8px 16px;border-top:1px solid #243346;display:flex;gap:8px}
+.btn-func{flex:1;padding:7px 0;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:5px}
+.btn-green{background:#1a6e45;color:#7defa5}
+.btn-blue{background:#1a3f6e;color:#6aaaff}
+.btn-purple{background:#4a2a7a;color:#c08aff}
+.btn-indigo{background:#2a2a6e;color:#8a8aff}
+.btn-teal{background:#0e5560;color:#4dd8e8}
+.upload-area{margin:12px 16px;border:1.5px dashed #2a4060;border-radius:8px;padding:16px;text-align:center;cursor:pointer;background:#111e2e;transition:border-color .2s}
+.upload-area:hover{border-color:#4a80b0}
+.upload-area.dragover{border-color:#5ab0ff;background:#131f30}
+.upload-label{color:#4a80b0;font-size:13px}
+.upload-label span{color:#5ab0ff;text-decoration:underline;cursor:pointer}
+.stats-bar{margin:0 16px 8px;background:#111e2e;border-radius:8px;padding:12px 16px;display:flex;gap:32px;align-items:flex-end}
+.stat-item .label{font-size:11px;color:#4a6080;margin-bottom:2px}
+.stat-item .value{font-size:22px;font-weight:500;color:#e0e8f0}
+.stat-item .value.accent{color:#4dd8e8}
+.result-header{margin:0 16px 4px;display:flex;align-items:center;gap:8px}
+.result-header .count-badge{background:#0e4030;color:#4dd8e8;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:500}
+.table-wrap{margin:0 16px 16px;overflow-x:auto;border-radius:8px;border:1px solid #1e3048}
+table{width:100%;border-collapse:collapse;min-width:900px}
+thead tr{background:#1e2e42}
+th{padding:9px 12px;text-align:left;font-size:12px;font-weight:500;color:#7a9abf;border-bottom:1px solid #1e3048;white-space:nowrap}
+tbody tr{border-bottom:1px solid #131e2c;background:#0d1623}
+tbody tr:hover{background:#141f30}
+td{padding:8px 12px;font-size:12px;color:#c0d0e0;white-space:nowrap}
+td.highlight{color:#f0c040;font-weight:500}
+.badge{display:inline-block;padding:1px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.badge-green{background:#0e3a20;color:#4de880;border:1px solid #1a5c30}
+.badge-blue{background:#0e2a4a;color:#6abaff;border:1px solid #1a4070}
+.no-data{text-align:center;padding:40px;color:#4a6080}
+.filter-row{margin:0 16px 8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-row input,.filter-row select{background:#111e2e;border:1px solid #2a3a52;border-radius:5px;color:#c0d0e0;font-size:12px;padding:5px 10px;outline:none}
+.filter-row input:focus,.filter-row select:focus{border-color:#4a80b0}
+.flag-social{color:#4dd8e8}
+.flag-gaichuu{color:#c08aff}
+</style>
+
+<div class="header">
+  <div class="search-box" id="searchBox">
+    <span id="tagArea"></span>
+    <input type="text" id="mainSearch" placeholder="部番を入力して検索..." />
+  </div>
+  <button class="btn-search" onclick="doSearch()">検索</button>
+</div>
+
+<div class="subheader">
+  <button class="btn-func btn-green" onclick="document.getElementById('fileInput').click()">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v10M4 7l4 4 4-4M2 13h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    JSONを読み込む
+  </button>
+  <button class="btn-func btn-blue" onclick="filterFlag('全て')">全件表示</button>
+  <button class="btn-func btn-purple" onclick="filterFlag('社内')">社内金型</button>
+  <button class="btn-func btn-teal" onclick="filterFlag('外注')">外注PX</button>
+  <button class="btn-func btn-indigo" onclick="clearSearch()">クリア</button>
+</div>
+<input type="file" id="fileInput" accept=".json" style="display:none" onchange="loadJSON(this)">
+
+<div class="upload-area" id="dropZone">
+  <div class="upload-label">JSONファイルをここにドロップ、または <span onclick="document.getElementById('fileInput').click()">ファイルを選択</span></div>
+  <div style="color:#4a6080;font-size:11px;margin-top:4px">kanagata_unified_to_json.py で出力したJSONに対応</div>
+</div>
+
+<div id="statsBar" class="stats-bar" style="display:none">
+  <div class="stat-item"><div class="label">件数</div><div class="value accent" id="statCount">0</div></div>
+  <div class="stat-item"><div class="label">社内</div><div class="value" id="statShakai">0</div></div>
+  <div class="stat-item"><div class="label">外注</div><div class="value" id="statGaichuu">0</div></div>
+  <div class="stat-item"><div class="label">部番（ユニーク）</div><div class="value" id="statBuban">0</div></div>
+</div>
+
+<div class="filter-row" id="filterRow" style="display:none">
+  <input type="text" id="filterBuban" placeholder="部番フィルター" oninput="applyFilters()" style="width:160px">
+  <input type="text" id="filterHinmei" placeholder="品名フィルター" oninput="applyFilters()" style="width:160px">
+  <input type="text" id="filterKanrimo" placeholder="管理元フィルター" oninput="applyFilters()" style="width:130px">
+  <select id="filterFlag2" onchange="applyFilters()">
+    <option value="">フラグ（全て）</option>
+    <option value="社内">社内</option>
+  </select>
+</div>
+
+<div class="result-header" id="resultHeader" style="display:none">
+  <span style="color:#7a9abf;font-size:12px">出荷情報</span>
+  <span class="count-badge" id="resultCount">0件</span>
+</div>
+
+<div class="table-wrap" id="tableWrap" style="display:none">
+  <table>
+    <thead>
+      <tr>
+        <th>フラグ</th><th>部番</th><th>部材部番</th><th>品名</th><th>置場/加工先</th>
+        <th>仕様トン数</th><th>工程数</th><th>工程名称</th><th>金型製造先</th>
+        <th>管理元</th><th>資産NO</th><th>資産登録</th><th>所在状況</th><th>備考</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+</div>
+
+<script>
+let allData = [];
+let currentFlag = '全て';
+
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) readFile(file);
+});
+
+function loadJSON(input) {
+  if (input.files[0]) readFile(input.files[0]);
+}
+
+function readFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      allData = JSON.parse(e.target.result);
+      populateFlagFilter();
+      renderTable(allData);
+      updateStats(allData);
+      document.getElementById('dropZone').style.display = 'none';
+      document.getElementById('statsBar').style.display = 'flex';
+      document.getElementById('filterRow').style.display = 'flex';
+    } catch(err) {
+      alert('JSONの読み込みに失敗しました: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function populateFlagFilter() {
+  const flags = [...new Set(allData.map(r => r['フラグ']).filter(Boolean))];
+  const sel = document.getElementById('filterFlag2');
+  sel.innerHTML = '<option value="">フラグ（全て）</option>';
+  flags.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f; opt.textContent = f; sel.appendChild(opt);
+  });
+}
+
+function updateStats(data) {
+  const shakai = data.filter(r => r['フラグ'] === '社内').length;
+  const gaichuu = data.filter(r => r['フラグ'] !== '社内').length;
+  const buban = new Set(data.map(r => r['部番']).filter(Boolean)).size;
+  document.getElementById('statCount').textContent = data.length.toLocaleString();
+  document.getElementById('statShakai').textContent = shakai.toLocaleString();
+  document.getElementById('statGaichuu').textContent = gaichuu.toLocaleString();
+  document.getElementById('statBuban').textContent = buban.toLocaleString();
+}
+
+function doSearch() {
+  const q = document.getElementById('mainSearch').value.trim();
+  if (!q || !allData.length) return;
+  document.getElementById('mainSearch').value = '';
+  applyFilters(q);
+}
+
+function clearSearch() {
+  document.getElementById('mainSearch').value = '';
+  document.getElementById('filterBuban').value = '';
+  document.getElementById('filterHinmei').value = '';
+  document.getElementById('filterKanrimo').value = '';
+  document.getElementById('filterFlag2').value = '';
+  currentFlag = '全て';
+  if (allData.length) { renderTable(allData); updateStats(allData); }
+}
+
+function filterFlag(flag) {
+  currentFlag = flag;
+  applyFilters();
+}
+
+function applyFilters(searchQ) {
+  if (!allData.length) return;
+  const q = searchQ || document.getElementById('mainSearch').value.trim();
+  const buban = document.getElementById('filterBuban').value.trim().toLowerCase();
+  const hinmei = document.getElementById('filterHinmei').value.trim().toLowerCase();
+  const kanri = document.getElementById('filterKanrimo').value.trim().toLowerCase();
+  const flag2 = document.getElementById('filterFlag2').value;
+
+  let result = allData.filter(r => {
+    if (currentFlag === '社内' && r['フラグ'] !== '社内') return false;
+    if (currentFlag === '外注' && r['フラグ'] === '社内') return false;
+    if (flag2 && r['フラグ'] !== flag2) return false;
+    if (buban && !(r['部番']||'').toLowerCase().includes(buban)) return false;
+    if (hinmei && !(r['品名']||'').toLowerCase().includes(hinmei)) return false;
+    if (kanri && !(r['管理元']||'').toLowerCase().includes(kanri)) return false;
+    if (q) {
+      const target = [r['部番'],r['部材部番'],r['品名'],r['管理元'],r['資産NO']].join(' ').toLowerCase();
+      if (!target.includes(q.toLowerCase())) return false;
+    }
+    return true;
+  });
+
+  renderTable(result, q);
+  updateStats(result);
+}
+
+function hl(text, q) {
+  if (!text || !q) return text || '';
+  const idx = String(text).toLowerCase().indexOf(q.toLowerCase());
+  if (idx < 0) return String(text);
+  const s = String(text);
+  return s.slice(0,idx) + '<span style="color:#f0c040;font-weight:500">' + s.slice(idx, idx+q.length) + '</span>' + s.slice(idx+q.length);
+}
+
+function renderTable(data, q) {
+  const body = document.getElementById('tableBody');
+  document.getElementById('tableWrap').style.display = 'block';
+  document.getElementById('resultHeader').style.display = 'flex';
+  document.getElementById('resultCount').textContent = data.length + '件';
+
+  if (!data.length) {
+    body.innerHTML = '<tr><td colspan="14" class="no-data">該当データがありません</td></tr>';
+    return;
+  }
+
+  body.innerHTML = data.slice(0, 300).map(r => {
+    const flag = r['フラグ'] || '';
+    const isShakai = flag === '社内';
+    const flagStyle = isShakai ? 'color:#4dd8e8' : 'color:#c08aff';
+    const badge = r['資産登録有無']
+      ? `<span class="badge badge-green">${r['資産登録有無']}</span>`
+      : '<span style="color:#4a6080">-</span>';
+    return `<tr>
+      <td style="${flagStyle};font-weight:500">${flag}</td>
+      <td class="highlight">${hl(r['部番'], q)}</td>
+      <td>${hl(r['部材部番'], q)}</td>
+      <td>${hl(r['品名'], q)}</td>
+      <td>${r['置場']||'-'}</td>
+      <td style="text-align:right">${r['仕様トン数']!=null?r['仕様トン数']:'-'}</td>
+      <td style="text-align:center">${r['工程数']!=null?r['工程数']:'-'}</td>
+      <td>${r['工程名称']||'-'}</td>
+      <td>${r['金型製造先']||'-'}</td>
+      <td>${hl(r['管理元'], q)}</td>
+      <td>${hl(r['資産NO'], q)}</td>
+      <td>${badge}</td>
+      <td>${r['所在状況']||'-'}</td>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis" title="${r['備考']||''}">${r['備考']||'-'}</td>
+    </tr>`;
+  }).join('');
+
+  if (data.length > 300) {
+    body.innerHTML += `<tr><td colspan="14" style="text-align:center;color:#4a6080;padding:12px">... 他 ${data.length-300} 件（絞り込みで表示数を減らしてください）</td></tr>`;
+  }
+}
+
+document.getElementById('mainSearch').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+</script>
