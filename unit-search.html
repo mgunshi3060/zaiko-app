@@ -273,6 +273,63 @@
   td.c-dval  { text-align: right; }
   td.c-minus { color: #d93025 !important; font-weight: 700; text-align: right; }
 
+
+  /* ══ 部署フィルター行 ══ */
+  .header-filter-row {
+    display: flex; align-items: center; gap: 6px;
+    padding-top: 2px;
+  }
+  .filter-label {
+    font-size: 9px; font-weight: 700; color: #7dd3b0;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .busho-select {
+    flex: 1; height: 24px; min-width: 0;
+    background: #2c3a4a; border: 1.5px solid #3e5068;
+    border-radius: 7px; color: #e8edf3;
+    font-family: var(--font-main); font-size: 11px;
+    padding: 0 6px; outline: none; cursor: pointer;
+    -webkit-appearance: none; appearance: none;
+    transition: border-color .2s;
+  }
+  .busho-select:focus { border-color: #7dd3b0; }
+  .busho-apply-btn {
+    flex-shrink: 0; height: 24px; padding: 0 10px;
+    background: #1a7f5a; color: #fff;
+    border: none; border-radius: 7px;
+    font-size: 11px; font-weight: 700; font-family: var(--font-main);
+    cursor: pointer; white-space: nowrap;
+    transition: opacity .15s, background .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .busho-apply-btn:active { opacity: .75; }
+  .busho-apply-btn.active { background: #e65c00; }
+  .busho-clear-btn {
+    flex-shrink: 0; height: 24px; padding: 0 8px;
+    background: #3a3a4a; color: #aaa;
+    border: 1.5px solid #555; border-radius: 7px;
+    font-size: 11px; font-weight: 700; font-family: var(--font-main);
+    cursor: pointer; white-space: nowrap;
+    transition: opacity .15s;
+    -webkit-tap-highlight-color: transparent;
+    display: none;
+  }
+  .busho-clear-btn.visible { display: block; }
+  .busho-clear-btn:active { opacity: .75; }
+  .minus-filter-btn {
+    flex-shrink: 0; height: 24px; padding: 0 9px;
+    border: 1.5px solid #8b2020; border-radius: 7px;
+    background: #2c1a1a; color: #ff8888;
+    font-size: 11px; font-weight: 700; font-family: var(--font-main);
+    cursor: pointer; white-space: nowrap;
+    transition: background .15s, border-color .15s, color .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .minus-filter-btn:active { opacity: .75; }
+  .minus-filter-btn.active {
+    background: #d93025; border-color: #d93025; color: #fff;
+  }
+
   /* 土曜 */
   td.c-sat      { background: #cce8ff !important; }
   th.c-sat-head { background: #1a4070 !important; color: #b8d8ff !important; }
@@ -318,49 +375,6 @@
     text-align: center; padding: 48px 20px;
     color: var(--text-muted); font-size: 13px;
     font-family: var(--font-main);
-  }
-
-  /* ══ 部署フィルター行 ══ */
-  .header-filter-row {
-    display: flex; align-items: center; gap: 5px;
-    padding-top: 2px; overflow-x: auto; overflow-y: hidden;
-    scrollbar-width: none; -ms-overflow-style: none;
-    flex-wrap: nowrap;
-  }
-  .header-filter-row::-webkit-scrollbar { display: none; }
-
-  .filter-label {
-    font-size: 9px; font-weight: 700; color: #7dd3b0;
-    white-space: nowrap; flex-shrink: 0;
-  }
-
-  .busho-btn {
-    flex-shrink: 0; height: 22px; padding: 0 8px;
-    border: 1.5px solid #3e5068; border-radius: 5px;
-    background: #2c3a4a; color: #c8d4e0;
-    font-size: 10px; font-weight: 700; font-family: var(--font-main);
-    cursor: pointer; white-space: nowrap;
-    transition: background .15s, border-color .15s, color .15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .busho-btn:hover { border-color: #7dd3b0; color: #7dd3b0; }
-  .busho-btn.active {
-    background: #1a7f5a; border-color: #1a7f5a; color: #fff;
-  }
-
-  /* マイナス抽出ボタン */
-  .minus-filter-btn {
-    flex-shrink: 0; height: 22px; padding: 0 9px;
-    border: 1.5px solid #8b2020; border-radius: 5px;
-    background: #2c1a1a; color: #ff8888;
-    font-size: 10px; font-weight: 700; font-family: var(--font-main);
-    cursor: pointer; white-space: nowrap;
-    transition: background .15s, border-color .15s, color .15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .minus-filter-btn:hover { border-color: #d93025; color: #ff6666; }
-  .minus-filter-btn.active {
-    background: #d93025; border-color: #d93025; color: #fff;
   }
 
   /* ══ ページネーション ══ */
@@ -447,11 +461,15 @@
       📋 発注検索
     </button>
   </div>
-  <!-- 第4段：部署フィルター＋マイナス抽出 -->
-  <div class="header-filter-row" id="bushoFilterRow">
-    <span class="filter-label">🏭部署:</span>
+  <!-- 第4段：部署プルダウン＋マイナス抽出 -->
+  <div class="header-filter-row">
+    <span class="filter-label">🏭部署</span>
+    <select class="busho-select" id="bushoSelect">
+      <option value="">── 全部署 ──</option>
+    </select>
+    <button class="busho-apply-btn" id="bushoApplyBtn" onclick="applyBushoFilter()">絞込</button>
+    <button class="busho-clear-btn" id="bushoClearBtn" onclick="clearBushoFilter()">✕解除</button>
     <button class="minus-filter-btn" id="minusFilterBtn" onclick="toggleMinusFilter()">🔴 マイナス行</button>
-    <!-- 部署ボタンはJS側で動的生成 -->
   </div>
 </div>
 
@@ -496,8 +514,8 @@ let currentPage  = 0;
 let pageSize     = 100;
 let query1       = ''; // 親部番＆中間
 let query2       = ''; // ホトム部番
-let activeBusho  = new Set(); // 選択中の部署（空=全表示）
-let minusOnly    = false;     // マイナス行のみ表示
+let filterBusho  = '';  // 選択中の部署（空=全）
+let minusOnly    = false; // マイナス行のみ
 let timer1, timer2, pgTimer;
 
 /* ── 土日判定 ── */
@@ -548,9 +566,9 @@ function initData(json) {
     try {
       allData = Array.isArray(json) ? json : JSON.parse(json);
       buildHeader();
-      buildBushoButtons();
+      buildBushoSelect();
       query1 = ''; query2 = '';
-      activeBusho.clear(); minusOnly = false;
+      filterBusho = ''; minusOnly = false;
       applyFilter();
       setProgress(false);
       document.getElementById('dropZone').style.display = 'none';
@@ -591,56 +609,6 @@ function buildHeader() {
   document.getElementById('tableHead').innerHTML = h;
 }
 
-/* ── 部署ボタン動的生成 ── */
-function buildBushoButtons() {
-  const seen = new Set();
-  for (const row of allData) {
-    const b = row['部署'];
-    if (b && b !== 'nan') seen.add(b);
-  }
-  const sorted = Array.from(seen).sort((a, b) => a.localeCompare(b, 'ja'));
-  const row = document.getElementById('bushoFilterRow');
-  // 既存の部署ボタンを削除（ラベルとマイナスボタンは残す）
-  Array.from(row.querySelectorAll('.busho-btn')).forEach(el => el.remove());
-
-  for (const busho of sorted) {
-    const btn = document.createElement('button');
-    btn.className = 'busho-btn';
-    btn.textContent = busho;
-    btn.setAttribute('data-busho', busho);
-    btn.onclick = () => toggleBusho(busho, btn);
-    row.appendChild(btn);
-  }
-}
-
-/* ── 部署トグル ── */
-function toggleBusho(busho, btn) {
-  if (activeBusho.has(busho)) {
-    activeBusho.delete(busho);
-    btn.classList.remove('active');
-  } else {
-    activeBusho.add(busho);
-    btn.classList.add('active');
-  }
-  currentPage = 0;
-  applyFilter();
-}
-
-/* ── マイナスフィルタートグル ── */
-function toggleMinusFilter() {
-  minusOnly = !minusOnly;
-  const btn = document.getElementById('minusFilterBtn');
-  btn.classList.toggle('active', minusOnly);
-  currentPage = 0;
-  applyFilter();
-}
-
-/* ── 行にマイナス値があるか判定 ── */
-function rowHasMinus(row) {
-  const dates = row['日付'] || {};
-  return Object.values(dates).some(v => typeof v === 'number' && v < 0);
-}
-
 /* ── 検索入力（クリアボタン表示のみ、検索はしない） ── */
 document.getElementById('searchInput').addEventListener('input', function() {
   document.getElementById('clearBtn1').classList.toggle('visible', this.value.length > 0);
@@ -676,6 +644,66 @@ function clearSearch2() {
   query2 = ''; currentPage = 0; applyFilter();
 }
 
+/* ── 部署プルダウン生成 ── */
+function buildBushoSelect() {
+  const seen = new Set();
+  for (const row of allData) {
+    const b = row['部署'];
+    if (b && b !== 'nan') seen.add(b);
+  }
+  const sorted = Array.from(seen).sort((a, b) => a.localeCompare(b, 'ja'));
+  const sel = document.getElementById('bushoSelect');
+  sel.innerHTML = '<option value="">── 全部署 ──</option>';
+  for (const b of sorted) {
+    const opt = document.createElement('option');
+    opt.value = b; opt.textContent = b;
+    sel.appendChild(opt);
+  }
+}
+
+/* ── 部署フィルター適用 ── */
+function applyBushoFilter() {
+  filterBusho = document.getElementById('bushoSelect').value;
+  const applyBtn = document.getElementById('bushoApplyBtn');
+  const clearBtn = document.getElementById('bushoClearBtn');
+  if (filterBusho) {
+    applyBtn.classList.add('active');
+    applyBtn.textContent = '絞込中';
+    clearBtn.classList.add('visible');
+  } else {
+    applyBtn.classList.remove('active');
+    applyBtn.textContent = '絞込';
+    clearBtn.classList.remove('visible');
+  }
+  currentPage = 0;
+  applyFilter();
+}
+
+/* ── 部署フィルター解除 ── */
+function clearBushoFilter() {
+  filterBusho = '';
+  document.getElementById('bushoSelect').value = '';
+  document.getElementById('bushoApplyBtn').classList.remove('active');
+  document.getElementById('bushoApplyBtn').textContent = '絞込';
+  document.getElementById('bushoClearBtn').classList.remove('visible');
+  currentPage = 0;
+  applyFilter();
+}
+
+/* ── マイナスフィルタートグル ── */
+function toggleMinusFilter() {
+  minusOnly = !minusOnly;
+  document.getElementById('minusFilterBtn').classList.toggle('active', minusOnly);
+  currentPage = 0;
+  applyFilter();
+}
+
+/* ── 行にマイナス値があるか ── */
+function rowHasMinus(row) {
+  const dates = row['日付'] || {};
+  return Object.values(dates).some(v => typeof v === 'number' && v < 0);
+}
+
 function applyFilter() {
   let result = allData;
   // ① 親部番＆中間フィルター
@@ -689,8 +717,8 @@ function applyFilter() {
     result = result.filter(r => (r['ホトム部番'] || '').toLowerCase().includes(q));
   }
   // ③ 部署フィルター
-  if (activeBusho.size > 0) {
-    result = result.filter(r => activeBusho.has(r['部署']));
+  if (filterBusho) {
+    result = result.filter(r => r['部署'] === filterBusho);
   }
   // ④ マイナス行のみ
   if (minusOnly) {
@@ -790,12 +818,8 @@ function updateStatus() {
   h += `&nbsp; 表示: <span class="cnt">${filteredData.length.toLocaleString()}</span>`;
   if (query1) h += `&nbsp;<span class="status-tag">①&nbsp;"${esc(query1)}"</span>`;
   if (query2) h += `&nbsp;<span class="status-tag sub">②&nbsp;"${esc(query2)}"</span>`;
-  if (activeBusho.size > 0) {
-    h += `&nbsp;<span class="status-tag" style="background:#e6f4ef;border-color:#1a7f5a;color:#1a5c3a">🏭${Array.from(activeBusho).join('・')}</span>`;
-  }
-  if (minusOnly) {
-    h += `&nbsp;<span class="status-tag" style="background:#fde8e8;border-color:#d93025;color:#b02020">🔴マイナス行のみ</span>`;
-  }
+  if (filterBusho) h += `&nbsp;<span class="status-tag" style="background:#e6f4ef;border-color:#1a7f5a;color:#1a5c3a">🏭${esc(filterBusho)}</span>`;
+  if (minusOnly)   h += `&nbsp;<span class="status-tag" style="background:#fde8e8;border-color:#d93025;color:#b02020">🔴マイナス行のみ</span>`;
   if (dateColumns.length) h += `&nbsp;<span class="status-tag">📅${dateColumns.length}日</span>`;
   setStatus(h);
 }
