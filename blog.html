@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>社内ブログ — 社内ポータル</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#1D9E75;--green-d:#0F6E56;--green-dd:#085041;--green-l:#E1F5EE;
+  --red:#E24B4A;--red-l:#FCEBEB;
+  --amber:#EF9F27;--amber-l:#FAEEDA;
+  --blue:#378ADD;--blue-l:#E6F1FB;
+  --purple:#7F77DD;--purple-l:#EEEDFE;
+  --coral:#D85A30;--coral-l:#FAECE7;
+  --bg:#f5f4f1;--surface:#fff;--border:rgba(0,0,0,0.1);
+  --text:#1a1a1a;--text2:#666;--text3:#999;
+  --radius:8px;--radius-lg:12px;
+}
+body{font-family:'Hiragino Sans','Yu Gothic UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg);}
+
+/* NAV */
+.nav{height:50px;background:var(--surface);border-bottom:0.5px solid var(--border);display:flex;align-items:center;padding:0 16px;gap:6px;position:sticky;top:0;z-index:100;box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.nav-logo{width:30px;height:30px;background:var(--green);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nav-logo svg{width:16px;height:16px;fill:white;}
+.nav-name{font-size:13px;font-weight:600;color:var(--green-dd);margin-right:4px;white-space:nowrap;}
+.nav-tab{padding:6px 13px;border-radius:var(--radius);font-size:12px;cursor:pointer;color:var(--text2);border:none;background:none;white-space:nowrap;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;}
+.nav-tab:hover{background:#f0f0f0;color:var(--text);}
+.nav-tab.active{background:var(--green-l);color:var(--green-dd);font-weight:600;}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.nav-avatar{width:30px;height:30px;border-radius:50%;background:var(--green);color:white;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.admin-link{font-size:11px;color:var(--text3);padding:4px 10px;border:0.5px solid var(--border);border-radius:20px;cursor:pointer;transition:all .15s;text-decoration:none;}
+.admin-link:hover{color:var(--green);border-color:var(--green);}
+
+/* LAYOUT */
+.container{max-width:1000px;margin:0 auto;padding:20px 16px;}
+.two-col{display:grid;grid-template-columns:1fr 260px;gap:20px;align-items:start;}
+
+/* HEADER */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.page-title{font-size:20px;font-weight:700;}
+.write-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;background:var(--green);color:white;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;transition:background .15s;}
+.write-btn:hover{background:var(--green-d);}
+
+/* FILTER */
+.filter-row{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-btn{padding:5px 14px;border:0.5px solid var(--border);border-radius:20px;font-size:12px;background:var(--surface);cursor:pointer;color:var(--text2);transition:all .15s;}
+.filter-btn:hover{border-color:var(--green);color:var(--green);}
+.filter-btn.active{background:var(--green);color:white;border-color:var(--green);font-weight:600;}
+.search-input{height:34px;border:0.5px solid var(--border);border-radius:20px;padding:0 14px;font-size:12px;outline:none;margin-left:auto;width:180px;transition:border-color .15s;}
+.search-input:focus{border-color:var(--green);}
+
+/* BLOG CARDS */
+.blog-list{display:flex;flex-direction:column;gap:12px;}
+.blog-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:border-color .15s,box-shadow .15s;display:flex;gap:0;}
+.blog-card:hover{border-color:var(--green);box-shadow:0 2px 12px rgba(29,158,117,0.08);}
+.blog-card-cover{width:130px;flex-shrink:0;background:#eceae4;display:flex;align-items:center;justify-content:center;font-size:40px;position:relative;overflow:hidden;}
+.blog-card-cover img{width:100%;height:100%;object-fit:cover;}
+.blog-card-cover-placeholder{font-size:36px;opacity:.4;}
+.blog-card-body{flex:1;padding:14px 16px;display:flex;flex-direction:column;gap:6px;}
+.blog-card-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.cat-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:4px;white-space:nowrap;}
+.tag-chip{font-size:10px;padding:2px 7px;border-radius:20px;border:0.5px solid var(--border);color:var(--text2);}
+.blog-card-title{font-size:14px;font-weight:700;line-height:1.4;}
+.blog-card-snippet{font-size:12px;color:var(--text2);line-height:1.6;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.blog-card-footer{display:flex;align-items:center;gap:10px;margin-top:auto;}
+.author-av{width:22px;height:22px;border-radius:50%;background:var(--green);color:white;font-size:10px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.author-name{font-size:11px;color:var(--text2);}
+.post-date{font-size:11px;color:var(--text3);margin-left:auto;}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2);}
+.empty-icon{font-size:48px;margin-bottom:12px;opacity:.4;}
+.empty-text{font-size:14px;font-weight:600;margin-bottom:6px;}
+.empty-sub{font-size:12px;color:var(--text3);}
+
+/* SIDEBAR */
+.sidebar-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;}
+.sidebar-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;}
+.cat-list{display:flex;flex-direction:column;gap:4px;}
+.cat-item{display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:var(--radius);cursor:pointer;transition:background .15s;font-size:13px;}
+.cat-item:hover{background:#f5f4f1;}
+.cat-count{font-size:11px;color:var(--text3);background:#f5f4f1;padding:1px 7px;border-radius:20px;}
+.popular-item{display:flex;gap:8px;padding:8px 0;border-bottom:0.5px solid var(--border);cursor:pointer;align-items:flex-start;}
+.popular-item:last-child{border-bottom:none;}
+.popular-num{font-size:16px;font-weight:700;color:var(--green);min-width:24px;line-height:1.3;}
+.popular-title{font-size:12px;font-weight:600;line-height:1.4;}
+.popular-author{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* CATEGORIES */
+.cat-tech{background:var(--blue-l);color:#185fa5;}
+.cat-report{background:var(--green-l);color:var(--green-dd);}
+.cat-idea{background:var(--amber-l);color:#854f0b;}
+.cat-event{background:var(--purple-l);color:#3C3489;}
+.cat-other{background:#f5f4f1;color:var(--text2);}
+
+/* ===== POST MODAL ===== */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--surface);border-radius:var(--radius-lg);width:min(680px,100%);margin:auto;display:flex;flex-direction:column;}
+.modal-hd{padding:16px 20px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;z-index:1;}
+.modal-title-text{font-size:15px;font-weight:700;flex:1;}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text2);line-height:1;padding:2px 6px;}
+.modal-body{padding:20px;}
+
+/* FORM */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px;}
+.form-label .req{color:var(--red);margin-left:2px;}
+.form-input{width:100%;height:38px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;outline:none;transition:border-color .15s;font-family:inherit;}
+.form-input:focus{border-color:var(--green);}
+.form-textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;font-size:13px;outline:none;transition:border-color .15s;font-family:inherit;resize:vertical;min-height:140px;line-height:1.7;}
+.form-textarea:focus{border-color:var(--green);}
+.form-select{width:100%;height:38px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;outline:none;background:var(--surface);color:var(--text);transition:border-color .15s;}
+.form-select:focus{border-color:var(--green);}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* IMAGE UPLOAD */
+.img-upload-zone{border:1.5px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:8px;}
+.img-upload-zone:hover,.img-upload-zone.drag{border-color:var(--green);background:var(--green-l);}
+.img-upload-zone-text{font-size:12px;color:var(--text2);}
+.img-preview-wrap{position:relative;display:inline-block;}
+.img-preview{max-width:100%;max-height:200px;border-radius:var(--radius);border:0.5px solid var(--border);display:block;}
+.img-remove-btn{position:absolute;top:6px;right:6px;width:24px;height:24px;background:rgba(0,0,0,.55);color:white;border:none;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;line-height:1;}
+
+/* TAGS INPUT */
+.tags-input-wrap{display:flex;flex-wrap:wrap;gap:6px;border:0.5px solid var(--border);border-radius:var(--radius);padding:6px 8px;cursor:text;min-height:38px;align-items:center;transition:border-color .15s;}
+.tags-input-wrap:focus-within{border-color:var(--green);}
+.tag-pill{display:inline-flex;align-items:center;gap:4px;background:var(--green-l);color:var(--green-dd);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.tag-pill-remove{cursor:pointer;opacity:.7;font-size:13px;line-height:1;}
+.tag-pill-remove:hover{opacity:1;}
+.tags-text-input{border:none;outline:none;font-size:13px;min-width:80px;flex:1;background:transparent;font-family:inherit;}
+
+/* SUBMIT */
+
+/* DETAIL MODAL */
+.detail-cover{width:100%;max-height:280px;object-fit:cover;border-radius:var(--radius-lg) var(--radius-lg) 0 0;display:block;}
+.detail-cover-placeholder{height:120px;background:#eceae4;border-radius:var(--radius-lg) var(--radius-lg) 0 0;display:flex;align-items:center;justify-content:center;font-size:48px;opacity:.3;}
+.detail-body{padding:20px;}
+.detail-title{font-size:18px;font-weight:700;line-height:1.4;margin-bottom:12px;}
+.detail-meta{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+.detail-content{font-size:14px;line-height:1.9;color:var(--text);white-space:pre-wrap;word-break:break-word;}
+.detail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:16px;padding-top:16px;border-top:0.5px solid var(--border);}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--green-dd);color:white;padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* NAME PROMPT */
+.name-prompt-bg.open{display:flex;}
+.name-prompt-input:focus{border-color:var(--green);}
+
+.ring{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@media(max-width:680px){
+  .two-col{grid-template-columns:1fr;}
+  .sidebar-col{display:none;}
+  .blog-card-cover{width:90px;}
+  .form-row-2{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-logo"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></div>
+  <span class="nav-name">社内ポータル</span>
+  <a class="nav-tab" href="index.html">ホーム</a>
+  <a class="nav-tab" href="index.html#notice">お知らせ</a>
+  <a class="nav-tab active" href="blog.html">社内ブログ</a>
+  <a class="nav-tab" href="index.html#security">セキュリティ</a>
+  <a class="nav-tab" href="index.html#files">ファイル検索</a>
+  <div class="nav-right">
+    <a class="admin-link" href="admin.html">⚙ 管理者</a>
+    <div class="nav-avatar" id="nav-avatar" title="名前を変更">?</div>
+  </div>
+</nav>
+
+<!-- NAME PROMPT -->
+
+<!-- MAIN -->
+<div class="container">
+  <div class="page-header">
+    <div class="page-title">✏️ 社内ブログ</div>
+<a href="admin.html" style="font-size:11px;color:var(--text3);border:0.5px solid var(--border);padding:5px 12px;border-radius:20px;text-decoration:none;">⚙ 管理者ページ</a>
+  </div>
+
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="setFilter('all',this)">すべて</button>
+    <button class="filter-btn" onclick="setFilter('tech',this)">💡 技術・IT</button>
+    <button class="filter-btn" onclick="setFilter('report',this)">🏭 現場レポート</button>
+    <button class="filter-btn" onclick="setFilter('idea',this)">💭 アイデア</button>
+    <button class="filter-btn" onclick="setFilter('event',this)">🎉 イベント</button>
+    <button class="filter-btn" onclick="setFilter('other',this)">その他</button>
+    <input class="search-input" type="text" placeholder="🔍 キーワード検索..." oninput="setSearch(this.value)">
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div id="blog-list"></div>
+    </div>
+    <aside class="sidebar-col">
+      <div class="sidebar-card" style="margin-bottom:12px;">
+        <div class="sidebar-title">カテゴリ</div>
+        <div class="cat-list" id="sidebar-cats"></div>
+      </div>
+      <div class="sidebar-card">
+        <div class="sidebar-title">最近の投稿</div>
+        <div id="sidebar-recent"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- POST MODAL -->
+
+<!-- DETAIL MODAL -->
+<div class="modal-bg" id="detail-modal" onclick="if(event.target===this)closeDetailModal()">
+  <div class="modal-box" id="detail-box">
+    <div class="modal-hd">
+      <div class="modal-title-text" id="detail-hd-title" style="font-size:13px;"></div>
+      <button class="modal-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div id="detail-content-area"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="api.js"></script>
+<script>
+const BLOG_KEY='portal_blogs';
+const NAME_KEY='portal_username';
+const GH_OWNER='mgunshi3060';
+const GH_REPO='portal.index';
+const GH_BRANCH='main';
+const GH_TOKEN_KEY='portal_gh_token';
+
+const CAT={
+  tech:{label:'💡 技術・IT',cls:'cat-tech'},
+  report:{label:'🏭 現場レポート',cls:'cat-report'},
+  idea:{label:'💭 アイデア',cls:'cat-idea'},
+  event:{label:'🎉 イベント',cls:'cat-event'},
+  other:{label:'その他',cls:'cat-other'}
+};
+
+let blogs=[];
+let currentFilter='all';
+let currentSearch='';
+let pendingTags=[];
+let pendingImgData=null;
+
+// ===== DATA LOAD (api.js に委譲) =====
+async function loadBlogs(){
+  blogs = await apiLoad('blogs', BLOG_KEY);
+}
+
+// ===== NAME =====
+function updateAvatar(){
+  const n=getUsername();
+  const av=document.getElementById('nav-avatar');
+  av.textContent=n?n.slice(0,2):'?';
+  av.title=n?n+'（クリックで変更）':'名前を設定';
+}
+document.getElementById('nav-avatar').addEventListener('click',()=>{
+  document.getElementById('name-input').value=getUsername();
+  document.getElementById('name-prompt').classList.add('open');
+  setTimeout(()=>document.getElementById('name-input').focus(),100);
+});
+
+// ===== RENDER =====
+function getFiltered(){
+  let list=[...blogs].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(currentFilter!=='all') list=list.filter(b=>b.category===currentFilter);
+  if(currentSearch) list=list.filter(b=>
+    b.title.includes(currentSearch)||b.content.includes(currentSearch)||b.author.includes(currentSearch)||(b.tags||[]).some(t=>t.includes(currentSearch))
+  );
+  return list;
+}
+
+function renderList(){
+  const el=document.getElementById('blog-list');
+  const list=getFiltered();
+  if(!list.length){
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">✏️</div><div class="empty-text">${currentSearch||currentFilter!=='all'?'該当する投稿がありません':'まだ投稿がありません'}</div><div class="empty-sub">${currentSearch||currentFilter!=='all'?'検索条件を変えてみてください':'最初の投稿をしてみましょう！'}</div></div>`;
+    return;
+  }
+  el.innerHTML='<div class="blog-list">'+list.map(b=>blogCardHTML(b)).join('')+'</div>';
+}
+
+function blogCardHTML(b){
+  const cat=CAT[b.category]||CAT.other;
+  const dateStr=new Date(b.date).toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
+  const initials=b.author?b.author.slice(0,2):'?';
+  const snippet=b.content.replace(/\n/g,' ').slice(0,80)+(b.content.length>80?'…':'');
+  const tags=(b.tags||[]).map(t=>`<span class="tag-chip">#${t}</span>`).join('');
+  const coverHTML=b.imageData
+    ?`<img src="${b.imageData}" style="width:100%;height:100%;object-fit:cover;">`
+    :`<div class="blog-card-cover-placeholder">${catEmoji(b.category)}</div>`;
+  return `<div class="blog-card" onclick="openDetail('${b.id}')">
+    <div class="blog-card-cover">${coverHTML}</div>
+    <div class="blog-card-body">
+      <div class="blog-card-meta">
+        <span class="cat-badge ${cat.cls}">${cat.label}</span>
+        ${tags}
+      </div>
+      <div class="blog-card-title">${escHtml(b.title)}</div>
+      <div class="blog-card-snippet">${escHtml(snippet)}</div>
+      <div class="blog-card-footer">
+        <div class="author-av">${initials}</div>
+        <div class="author-name">${escHtml(b.author)}</div>
+        <div class="post-date">${dateStr}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function catEmoji(cat){
+  return {tech:'💡',report:'🏭',idea:'💭',event:'🎉',other:'📝'}[cat]||'📝';
+}
+
+function renderSidebar(){
+  // カテゴリ集計
+  const counts={};
+  blogs.forEach(b=>{ counts[b.category]=(counts[b.category]||0)+1; });
+  const catEl=document.getElementById('sidebar-cats');
+  catEl.innerHTML=Object.entries(CAT).map(([k,v])=>`
+    <div class="cat-item" onclick="setFilterSidebar('${k}')">
+      <span>${v.label}</span>
+      <span class="cat-count">${counts[k]||0}</span>
+    </div>`).join('');
+
+  // 最近5件
+  const recent=[...blogs].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+  const recEl=document.getElementById('sidebar-recent');
+  if(!recent.length){ recEl.innerHTML='<div style="font-size:12px;color:var(--text3);text-align:center;padding:12px 0;">投稿がありません</div>'; return; }
+  recEl.innerHTML=recent.map((b,i)=>`
+    <div class="popular-item" onclick="openDetail('${b.id}')">
+      <div class="popular-num">${i+1}</div>
+      <div>
+        <div class="popular-title">${escHtml(b.title)}</div>
+        <div class="popular-author">${escHtml(b.author)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function setFilter(f,btn){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+function setFilterSidebar(f){
+  currentFilter=f;
+  document.querySelectorAll('.filter-btn').forEach(b=>{
+    b.classList.toggle('active',b.textContent.trim()==='' && f==='all');
+  });
+  renderList();
+}
+function setSearch(v){ currentSearch=v; renderList(); }
+
+// ===== POST MODAL =====
+
+
+// TAGS
+function handleTagInput(e){
+  if(e.key==='Enter'||e.key===','){
+    e.preventDefault();
+    const v=e.target.value.trim().replace(/^#/,'');
+    if(v && !pendingTags.includes(v) && pendingTags.length<8){
+      pendingTags.push(v);
+      renderTagPills();
+    }
+    e.target.value='';
+  } else if(e.key==='Backspace' && !e.target.value && pendingTags.length){
+    pendingTags.pop();
+    renderTagPills();
+  }
+}
+function renderTagPills(){
+  const wrap=document.getElementById('tags-wrap');
+  const input=document.getElementById('tag-input');
+  wrap.innerHTML='';
+  pendingTags.forEach((t,i)=>{
+    const pill=document.createElement('span');
+    pill.className='tag-pill';
+    pill.innerHTML=`#${escHtml(t)}<span class="tag-pill-remove" onclick="removeTag(${i})">×</span>`;
+    wrap.appendChild(pill);
+  });
+  wrap.appendChild(input);
+}
+function removeTag(i){ pendingTags.splice(i,1); renderTagPills(); }
+
+// IMAGE
+function onImgDragOver(e){ e.preventDefault(); document.getElementById('img-zone').classList.add('drag'); }
+function onImgDragLeave(){ document.getElementById('img-zone').classList.remove('drag'); }
+function onImgDrop(e){ e.preventDefault(); document.getElementById('img-zone').classList.remove('drag'); if(e.dataTransfer.files[0]) handleImgFile(e.dataTransfer.files[0]); }
+function onImgSelect(e){ if(e.target.files[0]) handleImgFile(e.target.files[0]); e.target.value=''; }
+function handleImgFile(f){
+  if(!f.type.startsWith('image/')){ showToast('画像ファイルを選択してください'); return; }
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    pendingImgData=ev.target.result;
+    document.getElementById('img-preview-area').innerHTML=`
+      <div class="img-preview-wrap">
+        <img class="img-preview" src="${pendingImgData}">
+        <button class="img-remove-btn" onclick="removeImg(event)">✕</button>
+      </div>`;
+  };
+  reader.readAsDataURL(f);
+}
+function removeImg(e){ e.stopPropagation(); pendingImgData=null; resetImgPreview(); }
+function resetImgPreview(){
+  document.getElementById('img-preview-area').innerHTML=`<div style="font-size:24px;margin-bottom:4px;">🖼</div><div class="img-upload-zone-text">クリック または ドラッグ＆ドロップ<br>JPG・PNG・GIF 対応</div>`;
+}
+
+
+
+// ===== DETAIL MODAL =====
+function openDetail(id){
+  const b=blogs.find(x=>x.id===id);
+  if(!b) return;
+  const cat=CAT[b.category]||CAT.other;
+  const dateStr=new Date(b.date).toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'short'});
+  const initials=b.author?b.author.slice(0,2):'?';
+  const tags=(b.tags||[]).map(t=>`<span class="tag-chip">#${t}</span>`).join('');
+  document.getElementById('detail-hd-title').textContent=b.title;
+  document.getElementById('detail-content-area').innerHTML=`
+    ${b.imageData?`<img class="detail-cover" src="${b.imageData}">`:`<div class="detail-cover-placeholder">${catEmoji(b.category)}</div>`}
+    <div class="detail-body">
+      <div class="detail-meta">
+        <span class="cat-badge ${cat.cls}">${cat.label}</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="author-av">${initials}</div>
+          <span style="font-size:13px;font-weight:600;">${escHtml(b.author)}</span>
+        </div>
+        <span style="font-size:12px;color:var(--text3);">${dateStr}</span>
+      </div>
+      <div class="detail-title">${escHtml(b.title)}</div>
+      <div class="detail-content">${escHtml(b.content)}</div>
+      ${tags?`<div class="detail-tags">${tags}</div>`:''}
+    </div>`;
+  document.getElementById('detail-modal').classList.add('open');
+}
+function closeDetailModal(){ document.getElementById('detail-modal').classList.remove('open'); }
+
+// ===== UTILS =====
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ===== INIT =====
+async function init(){
+  await loadBlogs();
+  renderList();
+  renderSidebar();
+  updateAvatar();
+  if(getUsername()) document.getElementById('f-author').value=getUsername();
+
+}
+init();
+
+window.addEventListener('storage',e=>{ if(e.key===BLOG_KEY){ loadBlogs().then(()=>{renderList();renderSidebar();}); } });
+</script>
+</body>
+</html>

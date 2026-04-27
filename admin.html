@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理者ページ — 社内ポータル</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#1D9E75;--green-d:#0F6E56;--green-dd:#085041;--green-l:#E1F5EE;
+  --red:#E24B4A;--red-l:#FCEBEB;--amber:#EF9F27;--amber-l:#FAEEDA;
+  --blue:#378ADD;--blue-l:#E6F1FB;
+  --bg:#f5f4f1;--surface:#fff;--border:rgba(0,0,0,0.1);
+  --text:#1a1a1a;--text2:#666;--text3:#999;--radius:8px;--radius-lg:12px;
+}
+body{font-family:'Hiragino Sans','Yu Gothic UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg);}
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--green-dd) 0%,var(--green-d) 100%);}
+.login-box{background:var(--surface);border-radius:16px;padding:40px 36px;width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.18);}
+.login-logo{width:44px;height:44px;background:var(--green);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;}
+.login-logo svg{width:22px;height:22px;fill:white;}
+.login-title{text-align:center;font-size:16px;font-weight:700;margin-bottom:4px;}
+.login-sub{text-align:center;font-size:12px;color:var(--text2);margin-bottom:28px;}
+.login-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;display:block;}
+.login-input{width:100%;height:40px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:14px;margin-bottom:14px;outline:none;transition:border-color .15s;}
+.login-input:focus{border-color:var(--green);}
+.login-btn{width:100%;height:40px;background:var(--green);color:white;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;margin-top:4px;}
+.login-btn:hover{background:var(--green-d);}
+.login-err{background:var(--red-l);color:#a32d2d;font-size:12px;border-radius:var(--radius);padding:8px 12px;margin-bottom:12px;display:none;}
+/* ADMIN SHELL */
+.admin-shell{display:none;min-height:100vh;flex-direction:column;}
+.admin-nav{height:50px;background:var(--green-dd);display:flex;align-items:center;padding:0 20px;gap:12px;position:sticky;top:0;z-index:100;}
+.admin-nav-title{font-size:14px;font-weight:700;color:white;}
+.admin-nav-badge{background:rgba(255,255,255,.15);color:white;font-size:11px;padding:2px 10px;border-radius:20px;font-weight:600;}
+.admin-nav-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.portal-link{font-size:12px;color:rgba(255,255,255,.8);border:0.5px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 12px;cursor:pointer;text-decoration:none;transition:all .15s;}
+.portal-link:hover{background:rgba(255,255,255,.1);}
+.logout-btn{font-size:12px;color:rgba(255,255,255,.7);border:none;background:none;cursor:pointer;padding:5px 10px;}
+.admin-body{display:grid;grid-template-columns:220px 1fr;flex:1;}
+/* SIDEBAR */
+.sidebar{background:white;border-right:0.5px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:50px;max-height:calc(100vh - 50px);overflow-y:auto;}
+.sb-item{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--radius);font-size:13px;cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.sb-item:hover{background:#f5f4f1;color:var(--text);}
+.sb-item.active{background:var(--green-l);color:var(--green-dd);font-weight:600;}
+.sb-sep{height:0.5px;background:var(--border);margin:8px 0;}
+.sb-section{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;padding:8px 12px 4px;}
+/* MAIN */
+.admin-main{padding:20px;overflow:auto;}
+.admin-page{display:none;}
+.admin-page.active{display:block;}
+.page-title{font-size:18px;font-weight:700;margin-bottom:16px;}
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius-lg);padding:32px;text-align:center;cursor:pointer;transition:all .15s;background:var(--surface);margin-bottom:16px;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--green);background:var(--green-l);}
+.upload-zone-icon{font-size:36px;margin-bottom:8px;}
+.upload-zone-text{font-size:14px;font-weight:600;margin-bottom:4px;}
+.upload-zone-sub{font-size:12px;color:var(--text2);}
+#upload-input{display:none;}
+/* META FORM */
+.meta-form{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:16px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px;align-items:end;}
+.form-group label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px;}
+.form-group select,.form-group input{width:100%;height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s;}
+.form-group select:focus,.form-group input:focus{border-color:var(--green);}
+.urgent-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.urgent-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--red);cursor:pointer;}
+.urgent-row label{font-size:13px;font-weight:600;color:#a32d2d;cursor:pointer;}
+.upload-btn{height:38px;background:var(--green);color:white;border:none;border-radius:var(--radius);padding:0 20px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s;}
+.upload-btn:hover{background:var(--green-d);}
+.upload-btn:disabled{opacity:.5;cursor:not-allowed;}
+/* PENDING LIST */
+.pending-item{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.pending-thumb{width:36px;height:48px;background:#eceae4;border-radius:4px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.pending-thumb img{width:100%;height:100%;object-fit:cover;}
+.pending-name{font-size:13px;font-weight:600;flex:1;}
+.pending-pages{font-size:11px;color:var(--text3);}
+.btn-remove{background:none;border:0.5px solid var(--border);border-radius:var(--radius);padding:4px 10px;font-size:11px;color:var(--text2);cursor:pointer;}
+.btn-remove:hover{border-color:var(--red);color:var(--red);}
+/* TABLE */
+.manage-toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center;}
+.manage-search{flex:1;height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;outline:none;}
+.manage-search:focus{border-color:var(--green);}
+.tag-filter{height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;background:var(--surface);outline:none;}
+.doc-table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--radius-lg);overflow:hidden;border:0.5px solid var(--border);}
+.doc-table th{background:#f5f4f1;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:10px 12px;text-align:left;border-bottom:0.5px solid var(--border);}
+.doc-table td{padding:10px 12px;border-bottom:0.5px solid var(--border);font-size:13px;vertical-align:middle;}
+.doc-table tr:last-child td{border-bottom:none;}
+.doc-table tr:hover td{background:#fafaf8;}
+.doc-thumb-cell{width:36px;height:48px;background:#eceae4;border-radius:4px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.doc-thumb-cell img{width:100%;height:100%;object-fit:cover;}
+.nbadge{font-size:10px;font-weight:600;border-radius:4px;padding:2px 7px;white-space:nowrap;}
+.bs{background:var(--red-l);color:#a32d2d;}.bn{background:var(--amber-l);color:#854f0b;}
+.br{background:var(--green-l);color:var(--green-dd);}.bb{background:var(--blue-l);color:#185fa5;}
+.urgent-mark{background:var(--red);color:white;font-size:10px;padding:1px 5px;border-radius:3px;font-weight:600;}
+.action-btn{background:none;border:0.5px solid var(--border);border-radius:var(--radius);padding:4px 10px;font-size:11px;cursor:pointer;margin-right:4px;transition:all .15s;}
+.action-btn:hover{border-color:var(--green);color:var(--green);}
+.action-del:hover{border-color:var(--red)!important;color:var(--red)!important;}
+/* PROGRESS */
+.progress-bar-wrap{background:#eceae4;border-radius:20px;height:6px;margin-top:8px;overflow:hidden;}
+.progress-bar{height:100%;background:var(--green);border-radius:20px;transition:width .3s;}
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--green-dd);color:white;padding:10px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s;pointer-events:none;max-width:340px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.error{background:#a32d2d;}
+.ring{width:18px;height:18px;border:2px solid rgba(0,0,0,.15);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+/* INFO BOX */
+.info-box{border-radius:var(--radius);padding:10px 14px;font-size:12px;margin-bottom:14px;line-height:1.6;}
+.info-green{background:var(--green-l);border:0.5px solid #a8dfc9;color:var(--green-dd);}
+.info-amber{background:var(--amber-l);border:0.5px solid #e6c97a;color:#854f0b;}
+.info-red{background:var(--red-l);border:0.5px solid #f7c1c1;color:#a32d2d;}
+/* BLOG FORM */
+.blog-form-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;max-width:680px;}
+.blog-form-wrap .fl{margin-bottom:14px;}
+.blog-form-wrap label{font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:5px;}
+.blog-form-wrap input[type=text],.blog-form-wrap select,.blog-form-wrap textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s;font-family:inherit;}
+.blog-form-wrap input[type=text],.blog-form-wrap select{height:36px;}
+.blog-form-wrap textarea{padding:10px;resize:vertical;min-height:120px;line-height:1.7;}
+.blog-form-wrap input:focus,.blog-form-wrap select:focus,.blog-form-wrap textarea:focus{border-color:var(--green);}
+.img-upload-zone{border:1.5px dashed var(--border);border-radius:var(--radius);padding:18px;text-align:center;cursor:pointer;transition:all .15s;}
+.img-upload-zone:hover,.img-upload-zone.drag{border-color:var(--green);background:var(--green-l);}
+/* TOKEN FORM */
+.token-box{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;max-width:520px;}
+.token-input{width:100%;height:40px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;font-family:monospace;outline:none;transition:border-color .15s;margin-bottom:10px;}
+.token-input:focus{border-color:var(--green);}
+.token-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;}
+.token-ok{background:var(--green-l);color:var(--green-dd);}
+.token-ng{background:var(--red-l);color:#a32d2d;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-wrap">
+  <div class="login-box">
+    <div class="login-logo"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></div>
+    <div class="login-title">管理者ログイン</div>
+    <div class="login-sub">社内ポータル — 管理者専用</div>
+    <div class="login-err" id="login-err">IDまたはパスワードが違います</div>
+    <label class="login-label">管理者ID</label>
+    <input class="login-input" type="text" id="login-id" placeholder="admin" autocomplete="off">
+    <label class="login-label">パスワード</label>
+    <input class="login-input" type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">ログイン</button>
+    <div style="margin-top:16px;font-size:11px;color:var(--text3);text-align:center;">デモ用：ID <b>admin</b> / PW <b>portal2025</b></div>
+  </div>
+</div>
+
+<!-- ADMIN SHELL -->
+<div class="admin-shell" id="admin-shell">
+  <nav class="admin-nav">
+    <svg width="18" height="18" viewBox="0 0 16 16" fill="rgba(255,255,255,.7)"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>
+    <div class="admin-nav-title">社内ポータル</div>
+    <span class="admin-nav-badge">⚙ 管理者</span>
+    <div id="gh-status-badge" style="font-size:11px;padding:2px 10px;border-radius:20px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);">GitHub: 未確認</div>
+    <div class="admin-nav-right">
+      <a class="portal-link" href="index.html">← 一般ページへ</a>
+      <button class="logout-btn" onclick="doLogout()">ログアウト</button>
+    </div>
+  </nav>
+
+  <div class="admin-body">
+    <aside class="sidebar">
+      <div class="sb-section">お知らせ</div>
+      <button class="sb-item active" onclick="showAdmin('upload',this)">📤 PDFアップロード</button>
+      <button class="sb-item" onclick="showAdmin('manage',this)">📋 ドキュメント管理</button>
+      <div class="sb-sep"></div>
+      <div class="sb-section">ブログ</div>
+      <button class="sb-item" onclick="showAdmin('blog-post',this)">✏️ 新規投稿</button>
+      <button class="sb-item" onclick="showAdmin('blog-manage',this)">📰 ブログ管理</button>
+      <div class="sb-sep"></div>
+      <div class="sb-section">設定</div>
+      <button class="sb-item" onclick="showAdmin('portal-settings',this)">🌤 ポータル設定</button>
+      <button class="sb-item" onclick="showAdmin('github',this)">🔑 GitHub設定</button>
+      <button class="sb-item" onclick="showAdmin('settings',this)">⚙ サイト設定</button>
+      <button class="sb-item" onclick="showAdmin('password',this)">🔒 パスワード変更</button>
+      <div class="sb-sep"></div>
+      <div style="padding:12px;font-size:11px;color:var(--text3);">
+        <div>お知らせ数</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text);margin-top:2px;" id="sb-count">0</div>
+        <div style="margin-top:8px;">ブログ記事数</div>
+        <div style="font-size:22px;font-weight:700;color:var(--text);margin-top:2px;" id="sb-blog-count">0</div>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+
+      <!-- ===== PDF UPLOAD ===== -->
+      <div class="admin-page active" id="ap-upload">
+        <div class="page-title">📤 PDFアップロード</div>
+        <div class="info-box info-green">✅ アップロードしたPDFは <b>GitHub (data/docs.json)</b> に自動保存され、一般ページに即時反映されます。</div>
+        <div class="upload-zone" id="upload-zone" onclick="document.getElementById('upload-input').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+          <input type="file" id="upload-input" accept=".pdf" multiple onchange="onFileSelect(event)">
+          <div class="upload-zone-icon">📄</div>
+          <div class="upload-zone-text">クリック または ドラッグ＆ドロップ</div>
+          <div class="upload-zone-sub">PDF ファイル（複数選択可）</div>
+        </div>
+        <div id="pending-list"></div>
+        <div class="meta-form" id="meta-form" style="display:none">
+          <div style="font-size:13px;font-weight:700;margin-bottom:14px;color:var(--text2);">アップロード設定</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>カテゴリ</label>
+              <select id="meta-tag">
+                <option value="rule">📋 規約・規程</option>
+                <option value="security">🔒 セキュリティ</option>
+                <option value="notice">📢 連絡事項</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>公開日</label>
+              <input type="date" id="meta-date">
+            </div>
+            <div class="form-group">
+              <label style="opacity:0">　</label>
+              <div class="urgent-row" style="margin-bottom:0">
+                <input type="checkbox" id="meta-urgent">
+                <label for="meta-urgent">⚠ 重要（アラート表示）</label>
+              </div>
+            </div>
+          </div>
+          <button class="upload-btn" id="do-upload-btn" onclick="doUpload()">
+            <span>✓ GitHubへアップロード</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== MANAGE ===== -->
+      <div class="admin-page" id="ap-manage">
+        <div class="page-title">📋 ドキュメント管理</div>
+        <div class="info-box info-amber">⚠ 削除するとGitHubのdocs.jsonから削除されます（PDF本体はdocs.jsonに埋め込み保存）。</div>
+        <div class="manage-toolbar">
+          <input class="manage-search" type="text" placeholder="ファイル名で検索..." oninput="renderManage(this.value)">
+          <select class="tag-filter" onchange="renderManage(document.querySelector('.manage-search').value,this.value)" id="manage-tag-filter">
+            <option value="">すべてのカテゴリ</option>
+            <option value="rule">規約・規程</option>
+            <option value="security">セキュリティ</option>
+            <option value="notice">連絡事項</option>
+            <option value="other">その他</option>
+          </select>
+          <button class="upload-btn" style="white-space:nowrap;font-size:12px;height:34px;padding:0 14px;" onclick="loadRemoteDocs()">🔄 GitHubから再読み込み</button>
+        </div>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th style="width:50px">プレビュー</th><th>ファイル名</th>
+              <th style="width:100px">カテゴリ</th><th style="width:90px">公開日</th>
+              <th style="width:60px">ページ数</th><th style="width:140px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="manage-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ===== BLOG POST ===== -->
+      <div class="admin-page" id="ap-blog-post">
+        <div class="page-title">✏️ ブログ新規投稿</div>
+        <div class="info-box info-green">✅ 投稿内容は <b>GitHub (data/blogs.json)</b> に自動保存され、一般ブログページに即時反映されます。</div>
+        <div class="blog-form-wrap">
+          <div class="fl">
+            <label>タイトル <span style="color:var(--red)">*</span></label>
+            <input type="text" id="b-title" placeholder="記事タイトルを入力">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;" class="fl">
+            <div>
+              <label>カテゴリ</label>
+              <select id="b-category">
+                <option value="tech">💡 技術・IT</option>
+                <option value="report">🏭 現場レポート</option>
+                <option value="idea">💭 アイデア</option>
+                <option value="event">🎉 イベント</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
+            <div>
+              <label>著者名 <span style="color:var(--red)">*</span></label>
+              <input type="text" id="b-author" placeholder="山田 太郎">
+            </div>
+            <div>
+              <label>投稿日</label>
+              <input type="text" id="b-date" placeholder="例：2025-01-15">
+            </div>
+          </div>
+          <div class="fl">
+            <label>タグ（カンマ区切り）</label>
+            <input type="text" id="b-tags" placeholder="例：DX推進, ツール紹介, 業務改善">
+          </div>
+          <div class="fl">
+            <label>カバー画像（任意）</label>
+            <div class="img-upload-zone" id="blog-img-zone"
+              onclick="document.getElementById('blog-img-input').click()"
+              ondragover="onBlogImgDragOver(event)" ondragleave="onBlogImgDragLeave()" ondrop="onBlogImgDrop(event)">
+              <input type="file" id="blog-img-input" accept="image/*" style="display:none" onchange="onBlogImgSelect(event)">
+              <div id="blog-img-preview">
+                <div style="font-size:24px;margin-bottom:4px;">🖼</div>
+                <div style="font-size:12px;color:var(--text2);">クリック または ドラッグ＆ドロップ（JPG・PNG・GIF）</div>
+              </div>
+            </div>
+          </div>
+          <div class="fl">
+            <label>本文 <span style="color:var(--red)">*</span></label>
+            <textarea id="b-content" rows="10" placeholder="記事の内容を入力...&#10;&#10;改行もそのまま反映されます。"></textarea>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <button class="upload-btn" id="blog-submit-btn" onclick="submitBlogPost()">✓ GitHubへ投稿</button>
+            <button onclick="clearBlogForm()" style="height:38px;padding:0 16px;border:0.5px solid var(--border);border-radius:var(--radius);background:none;font-size:13px;cursor:pointer;">クリア</button>
+            <span id="blog-post-msg" style="font-size:12px;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== BLOG MANAGE ===== -->
+      <div class="admin-page" id="ap-blog-manage">
+        <div class="page-title">📰 ブログ管理</div>
+        <div class="manage-toolbar">
+          <input class="manage-search" type="text" placeholder="タイトル・投稿者で検索..." oninput="renderBlogManage(this.value)">
+          <select class="tag-filter" onchange="renderBlogManage(document.querySelector('.manage-search').value,this.value)" id="blog-cat-filter">
+            <option value="">すべてのカテゴリ</option>
+            <option value="tech">技術・IT</option>
+            <option value="report">現場レポート</option>
+            <option value="idea">アイデア</option>
+            <option value="event">イベント</option>
+            <option value="other">その他</option>
+          </select>
+          <button class="upload-btn" style="white-space:nowrap;font-size:12px;height:34px;padding:0 14px;" onclick="loadRemoteBlogs()">🔄 再読み込み</button>
+        </div>
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th style="width:60px">カバー</th><th>タイトル</th>
+              <th style="width:100px">カテゴリ</th><th style="width:90px">投稿者</th>
+              <th style="width:90px">投稿日</th><th style="width:80px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="blog-manage-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ===== GITHUB SETTINGS ===== -->
+      <div class="admin-page" id="ap-github">
+        <div class="page-title">🔑 GitHub 設定</div>
+        <div class="token-box">
+          <div class="info-box info-amber" style="margin-bottom:16px;">
+            <b>Personal Access Token (PAT) の取得方法：</b><br>
+            1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)<br>
+            2. 「Generate new token (classic)」をクリック<br>
+            3. <b>repo</b> スコープにチェック → 生成 → コピーしてここに貼り付け<br>
+            ⚠ Tokenはこのブラウザのみに保存されます（GitHubには送信されません）
+          </div>
+          <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px;">Personal Access Token</label>
+          <input class="token-input" type="password" id="gh-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
+            <button class="upload-btn" onclick="saveToken()">保存して接続テスト</button>
+            <button onclick="clearToken()" style="height:38px;padding:0 14px;border:0.5px solid var(--border);border-radius:var(--radius);background:none;font-size:13px;cursor:pointer;">削除</button>
+            <span id="token-status-badge" class="token-status token-ng" style="display:none"></span>
+          </div>
+          <div style="background:#f5f4f1;border-radius:var(--radius);padding:12px;font-size:12px;color:var(--text2);">
+            <b>接続先リポジトリ：</b> mgunshi3060/portal.index (main ブランチ)<br>
+            <b>保存先：</b> data/docs.json（お知らせ）、data/blogs.json（ブログ）<br>
+            <b>PDFの保存方法：</b> pdfs/ フォルダに個別保存 → URLをJSONに記録<br>
+            <b>XSERVERへの移行：</b> JSONファイルをPHPのAPIに置き換えるだけでOK
+          </div>
+          <div style="margin-top:16px;border-top:0.5px solid var(--border);padding-top:16px;">
+            <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;">🔧 データ修復ツール</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button onclick="repairDocsJson()" style="height:34px;padding:0 14px;border:0.5px solid var(--amber);color:#854f0b;background:var(--amber-l);border-radius:var(--radius);font-size:12px;cursor:pointer;font-weight:600;">docs.json を修復・初期化</button>
+              <button onclick="repairBlogsJson()" style="height:34px;padding:0 14px;border:0.5px solid var(--amber);color:#854f0b;background:var(--amber-l);border-radius:var(--radius);font-size:12px;cursor:pointer;font-weight:600;">blogs.json を修復・初期化</button>
+              <button onclick="checkGhFiles()" style="height:34px;padding:0 14px;border:0.5px solid var(--border);color:var(--text2);background:#f5f4f1;border-radius:var(--radius);font-size:12px;cursor:pointer;">GitHub状態を確認</button>
+            </div>
+            <div id="repair-msg" style="margin-top:10px;font-size:12px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== PORTAL SETTINGS ===== -->
+      <div class="admin-page" id="ap-portal-settings">
+        <div class="page-title">🌤 ポータル設定</div>
+
+        <!-- 天気設定 -->
+        <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;max-width:500px;margin-bottom:16px;">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">☀️ お天気設定</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">
+            ホーム画面の日付横に表示されるお天気の取得地域を設定します。<br>
+            都市名（英語・日本語）または郵便番号で指定できます。
+          </div>
+          <div class="form-group" style="margin-bottom:6px;">
+            <label>地域名（都市名 or 郵便番号）</label>
+            <input type="text" id="weather-city-input" placeholder="例：Ushiku / Tokyo / 大阪 / Tsukuba"
+              style="width:100%;height:38px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:14px;outline:none;font-family:inherit;">
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:12px;">
+            ✅ 使用例：<b>Ushiku</b>（牛久市）、<b>Tsukuba</b>（つくば市）、<b>Tokyo</b>、<b>Osaka</b><br>
+            ※ 日本語でも概ね動作しますが英語のほうが確実です
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="upload-btn" onclick="saveWeatherCity()">保存して反映</button>
+            <button onclick="testWeather()" style="height:38px;padding:0 14px;border:0.5px solid var(--border);border-radius:var(--radius);background:none;font-size:13px;cursor:pointer;">テスト取得</button>
+            <button onclick="clearWeatherCity()" style="height:38px;padding:0 14px;border:0.5px solid var(--red);color:var(--red);border-radius:var(--radius);background:none;font-size:13px;cursor:pointer;">クリア</button>
+          </div>
+          <div id="weather-test-result" style="margin-top:12px;font-size:13px;padding:10px;border-radius:var(--radius);display:none;"></div>
+        </div>
+
+        <!-- Googleカレンダー設定 -->
+        <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;max-width:500px;">
+          <div style="font-size:14px;font-weight:700;margin-bottom:4px;">📅 Googleカレンダー設定</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">
+            会社共有のGoogleカレンダーを連携すると、一般ページのホームに直近イベントが表示されます。
+          </div>
+          <div class="info-box info-amber" style="margin-bottom:14px;">
+            ⚠ カレンダーを <b>「一般公開」</b> に設定してから連携してください。<br>
+            Google カレンダー → 設定 → カレンダーの設定 → アクセス権限 → 「一般公開」にチェック
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label>カレンダーID</label>
+            <input type="text" id="cal-id-admin" placeholder="ccd7372a8b2c3bb83b675d07aff1c3388a3fdb1b052815dab903a35e5409ee49@group.calendar.google.com"
+              style="width:100%;height:38px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;outline:none;font-family:monospace;">
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label>Google API キー</label>
+            <input type="text" id="cal-key-admin" placeholder="AIzaSyACezsDAmNWF5EspHrzBhojDMuJpQPjv0A"
+              style="width:100%;height:38px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;outline:none;font-family:monospace;">
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;">
+            APIキー取得手順：<br>
+            1. Google Cloud Console → APIとサービス → 認証情報<br>
+            2. 「APIキーを作成」→ Google Calendar API を有効化<br>
+            3. APIキーの制限（推奨）：HTTPリファラー制限でGitHub Pagesのドメインを指定
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="upload-btn" onclick="saveCalAdmin()">保存</button>
+            <button onclick="clearCalAdmin()" style="height:38px;padding:0 14px;border:0.5px solid var(--red);color:var(--red);border-radius:var(--radius);background:none;font-size:13px;cursor:pointer;">クリア</button>
+          </div>
+          <div id="cal-admin-msg" style="margin-top:10px;font-size:12px;"></div>
+        </div>
+      </div>
+
+      <!-- ===== SETTINGS ===== -->
+      <div class="admin-page" id="ap-settings">
+        <div class="page-title">⚙ サイト設定</div>
+        <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;max-width:480px;">
+          <div class="form-group" style="margin-bottom:14px;">
+            <label>ポータル名</label>
+            <input type="text" id="set-portal-name" value="社内ポータル" style="width:100%;height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;">
+          </div>
+          <button class="upload-btn" onclick="showToast('設定を保存しました')">設定を保存</button>
+        </div>
+      </div>
+
+      <!-- ===== PASSWORD ===== -->
+      <div class="admin-page" id="ap-password">
+        <div class="page-title">🔒 パスワード変更</div>
+        <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;max-width:380px;">
+          <div class="info-box info-amber">⚠ パスワードはブラウザのLocalStorageに保存されます。</div>
+          <div class="form-group" style="margin-bottom:12px;"><label>現在のパスワード</label><input type="password" id="pw-current" style="width:100%;height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;"></div>
+          <div class="form-group" style="margin-bottom:12px;"><label>新しいパスワード</label><input type="password" id="pw-new" style="width:100%;height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;"></div>
+          <div class="form-group" style="margin-bottom:16px;"><label>確認</label><input type="password" id="pw-confirm" style="width:100%;height:36px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 10px;font-size:13px;"></div>
+          <button class="upload-btn" onclick="changePassword()">変更する</button>
+          <div id="pw-msg" style="margin-top:10px;font-size:12px;"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="api.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ========== GITHUB API → api.js に移管 ==========
+// GH_OWNER, GH_REPO, ghToken, ghFetch, ghGetSha, ghSaveJson は api.js で定義
+// ========== AUTH ==========
+
+const PW_KEY='portal_admin_pw';
+const DEFAULT_ID='admin';
+const DEFAULT_PW='portal2025';
+function getStoredPw(){ return localStorage.getItem(PW_KEY)||DEFAULT_PW; }
+
+function doLogin(){
+  const id=document.getElementById('login-id').value.trim();
+  const pw=document.getElementById('login-pw').value;
+  if(id===DEFAULT_ID&&pw===getStoredPw()){
+    document.getElementById('login-wrap').style.display='none';
+    document.getElementById('admin-shell').style.display='flex';
+    initAdmin();
+  }else{
+    document.getElementById('login-err').style.display='block';
+  }
+}
+function doLogout(){
+  document.getElementById('admin-shell').style.display='none';
+  document.getElementById('login-wrap').style.display='flex';
+  document.getElementById('login-id').value='';
+  document.getElementById('login-pw').value='';
+  document.getElementById('login-err').style.display='none';
+}
+// ========== PORTAL SETTINGS ==========
+const WEATHER_CITY_KEY='portal_weather_city';
+const CAL_ID_KEY='portal_cal_id';
+const CAL_KEY_KEY='portal_cal_key';
+
+function initPortalSettings(){
+  const city=localStorage.getItem(WEATHER_CITY_KEY)||'';
+  document.getElementById('weather-city-input').value=city;
+  document.getElementById('cal-id-admin').value=localStorage.getItem(CAL_ID_KEY)||'';
+  document.getElementById('cal-key-admin').value=localStorage.getItem(CAL_KEY_KEY)||'';
+}
+
+function saveWeatherCity(){
+  const v=document.getElementById('weather-city-input').value.trim();
+  if(!v){showToast('地域名を入力してください','error');return;}
+  localStorage.setItem(WEATHER_CITY_KEY,v);
+  showToast('天気の地域を「'+v+'」に設定しました ✓');
+}
+
+function clearWeatherCity(){
+  localStorage.removeItem(WEATHER_CITY_KEY);
+  document.getElementById('weather-city-input').value='';
+  showToast('天気設定をクリアしました');
+}
+
+async function testWeather(){
+  const cityQuery=document.getElementById('weather-city-input').value.trim();
+  const resultEl=document.getElementById('weather-test-result');
+  if(!cityQuery){showToast('地域名を入力してください','error');return;}
+  resultEl.style.display='block';
+  resultEl.style.background='#f5f4f1';
+  resultEl.textContent='取得中...';
+  try{
+    const geoRes=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(cityQuery)+'&count=1&language=ja');
+    const geoData=await geoRes.json();
+    if(!geoData.results||!geoData.results.length) throw new Error('都市が見つかりません: "'+cityQuery+'"');
+    const {latitude:lat,longitude:lon,name:cityName,country}=geoData.results[0];
+    const wxRes=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weathercode,apparent_temperature&timezone=Asia%2FTokyo');
+    const wx=await wxRes.json();
+    const cur=wx.current;
+    const wmoIcons={0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',80:'🌦',81:'🌧',95:'⛈'};
+    const icon=wmoIcons[cur.weathercode]||'🌡';
+    resultEl.style.background='var(--green-l)';
+    resultEl.innerHTML='✅ 取得成功！ &nbsp;'+icon+' <b>'+cityName+'</b> ('+country+') &nbsp; '+Math.round(cur.temperature_2m)+'°C &nbsp; 体感'+Math.round(cur.apparent_temperature)+'°C';
+  }catch(e){
+    resultEl.style.background='var(--red-l)';
+    resultEl.textContent='❌ '+e.message+' — 都市名の綴りを確認してください（英語推奨）';
+  }
+}
+
+function saveCalAdmin(){
+  const id=document.getElementById('cal-id-admin').value.trim();
+  const key=document.getElementById('cal-key-admin').value.trim();
+  localStorage.setItem(CAL_ID_KEY,id);
+  localStorage.setItem(CAL_KEY_KEY,key);
+  const msg=document.getElementById('cal-admin-msg');
+  msg.style.color='var(--green)';
+  msg.textContent='✅ 保存しました。一般ページのホームに反映されます。';
+  showToast('カレンダー設定を保存しました ✓');
+}
+
+function clearCalAdmin(){
+  localStorage.removeItem(CAL_ID_KEY);
+  localStorage.removeItem(CAL_KEY_KEY);
+  document.getElementById('cal-id-admin').value='';
+  document.getElementById('cal-key-admin').value='';
+  document.getElementById('cal-admin-msg').textContent='';
+  showToast('カレンダー設定をクリアしました');
+}
+
+function changePassword(){
+  const cur=document.getElementById('pw-current').value;
+  const nw=document.getElementById('pw-new').value;
+  const cf=document.getElementById('pw-confirm').value;
+  const msg=document.getElementById('pw-msg');
+  if(cur!==getStoredPw()){msg.style.color='#a32d2d';msg.textContent='現在のパスワードが違います';return;}
+  if(nw.length<6){msg.style.color='#a32d2d';msg.textContent='6文字以上で設定してください';return;}
+  if(nw!==cf){msg.style.color='#a32d2d';msg.textContent='確認パスワードが一致しません';return;}
+  localStorage.setItem(PW_KEY,nw);
+  msg.style.color='var(--green)';msg.textContent='変更しました';
+  ['pw-current','pw-new','pw-confirm'].forEach(id=>document.getElementById(id).value='');
+}
+
+// ========== TOKEN ==========
+async function saveToken(){
+  const val=document.getElementById('gh-token-input').value.trim();
+  if(!val){showToast('Tokenを入力してください','error');return;}
+  localStorage.setItem('portal_gh_token',val);
+  const badge=document.getElementById('token-status-badge');
+  badge.style.display='inline-flex';
+  badge.className='token-status token-ng';
+  badge.textContent='確認中...';
+  const r=await ghCheckToken();
+  badge.textContent=r.msg;
+  badge.className='token-status '+(r.ok?'token-ok':'token-ng');
+  updateGhStatusBadge(r);
+  if(r.ok) showToast('GitHub接続OK ✓');
+  else showToast(r.msg,'error');
+}
+function clearToken(){
+  localStorage.removeItem('portal_gh_token');
+  document.getElementById('gh-token-input').value='';
+  document.getElementById('token-status-badge').style.display='none';
+  updateGhStatusBadge({ok:false,msg:'Token削除'});
+  showToast('Token削除しました');
+}
+function updateGhStatusBadge(r){
+  const b=document.getElementById('gh-status-badge');
+  b.textContent='GitHub: '+(r.ok?'接続OK ✅':'未接続 ❌');
+  b.style.background=r.ok?'rgba(29,158,117,.3)':'rgba(226,75,74,.25)';
+  b.style.color=r.ok?'#d4f5e9':'#ffcccc';
+}
+
+// ========== DATA ==========
+const TAG={security:{label:'セキュリティ',cls:'bs'},rule:{label:'規約・規程',cls:'br'},notice:{label:'連絡事項',cls:'bn'},other:{label:'その他',cls:'bb'}};
+const BLOG_CAT={tech:{label:'💡 技術・IT',cls:'bb'},report:{label:'🏭 現場レポート',cls:'br'},idea:{label:'💭 アイデア',cls:'bn'},event:{label:'🎉 イベント',cls:'bs'},other:{label:'その他',cls:''}};
+
+let docs=[];
+let blogDocs=[];
+
+// ローカルキャッシュキー（閲覧用）
+const STORE_KEY='portal_docs';
+const BLOG_KEY='portal_blogs';
+
+async function loadRemoteDocs(){
+  showToast('GitHubから読み込み中...');
+  const data=await apiGetDocs().catch(()=>null);
+  if(data){ docs=data; localStorage.setItem(STORE_KEY,JSON.stringify(docs)); }
+  else{ const r=localStorage.getItem(STORE_KEY); docs=r?JSON.parse(r):[]; }
+  updateSbCount();
+  renderManage();
+  showToast('読み込み完了 ('+docs.length+'件)');
+}
+async function loadRemoteBlogs(){
+  showToast('GitHubから読み込み中...');
+  const data=await apiGetBlogs().catch(()=>null);
+  if(data){ blogDocs=data; localStorage.setItem(BLOG_KEY,JSON.stringify(blogDocs)); }
+  else{ const r=localStorage.getItem(BLOG_KEY); blogDocs=r?JSON.parse(r):[]; }
+  renderBlogManage();
+  showToast('読み込み完了 ('+blogDocs.length+'件)');
+}
+
+function updateSbCount(){
+  document.getElementById('sb-count').textContent=docs.length;
+  document.getElementById('sb-blog-count').textContent=blogDocs.length;
+}
+
+// ========== SIDEBAR ==========
+function showAdmin(id,btn){
+  document.querySelectorAll('.admin-page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('ap-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(id==='manage') renderManage();
+  if(id==='portal-settings') initPortalSettings();
+  if(id==='blog-manage'){ const r=localStorage.getItem(BLOG_KEY); blogDocs=r?JSON.parse(r):[]; renderBlogManage(); }
+  if(id==='github'){ const t=_ghToken(); if(t) document.getElementById('gh-token-input').value=t; }
+}
+
+// ========== PDF UPLOAD ==========
+let pendingFiles=[];
+
+function onDragOver(e){ e.preventDefault(); document.getElementById('upload-zone').classList.add('drag'); }
+function onDragLeave(e){ document.getElementById('upload-zone').classList.remove('drag'); }
+function onDrop(e){
+  e.preventDefault();
+  document.getElementById('upload-zone').classList.remove('drag');
+  handleFiles([...e.dataTransfer.files].filter(f=>f.type==='application/pdf'));
+}
+function onFileSelect(e){ handleFiles([...e.target.files]); e.target.value=''; }
+
+async function handleFiles(files){
+  for(const f of files){
+    const url=URL.createObjectURL(f);
+    const pdf=await pdfjsLib.getDocument(url).promise;
+    const page=await pdf.getPage(1);
+    const vp=page.getViewport({scale:0.7});
+    const canvas=document.createElement('canvas');
+    canvas.width=vp.width; canvas.height=vp.height;
+    await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+    const thumbData=canvas.toDataURL('image/jpeg',0.4);  // 圧縮率高め（JSON軽量化）
+    // PDF本体もBase64で読み込む
+    const pdfB64=await fileToBase64(f);
+    pendingFiles.push({name:f.name,pdfB64,numPages:pdf.numPages,thumbData});
+  }
+  renderPending();
+  document.getElementById('meta-form').style.display=pendingFiles.length?'block':'none';
+}
+
+function fileToBase64(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>res(e.target.result); // data:application/pdf;base64,xxxxx
+    r.onerror=rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function renderPending(){
+  const el=document.getElementById('pending-list');
+  if(!pendingFiles.length){ el.innerHTML=''; return; }
+  el.innerHTML=pendingFiles.map((f,i)=>`
+    <div class="pending-item">
+      <div class="pending-thumb"><img src="${f.thumbData}" style="width:100%;height:100%;object-fit:cover;"></div>
+      <div style="flex:1">
+        <div class="pending-name">${f.name}</div>
+        <div class="pending-pages">${f.numPages}ページ</div>
+        <div class="progress-bar-wrap" id="prog_${i}" style="display:none"><div class="progress-bar" style="width:0%" id="progbar_${i}"></div></div>
+      </div>
+      <button class="btn-remove" onclick="removePending(${i})">削除</button>
+    </div>`).join('');
+}
+
+function removePending(i){
+  pendingFiles.splice(i,1);
+  renderPending();
+  if(!pendingFiles.length) document.getElementById('meta-form').style.display='none';
+}
+
+async function doUpload(){
+  if(!pendingFiles.length) return;
+  if(!_ghToken()){ showToast('GitHub Tokenを設定してください','error'); showAdmin('github',null); return; }
+  const tag=document.getElementById('meta-tag').value;
+  const date=document.getElementById('meta-date').value||new Date().toISOString().slice(0,10);
+  const urgent=document.getElementById('meta-urgent').checked;
+  const btn=document.getElementById('do-upload-btn');
+  btn.disabled=true; btn.innerHTML='<div class="ring"></div><span>GitHubへ保存中...</span>';
+
+  try{
+    // 既存データをGitHubから取得
+    const remote=await apiGetDocs().catch(()=>null);
+    if(remote) docs=remote;
+
+    for(let i=0;i<pendingFiles.length;i++){
+      const f=pendingFiles[i];
+      document.getElementById('prog_'+i).style.display='block';
+      document.getElementById('progbar_'+i).style.width='20%';
+
+      // ① PDFファイルを pdfs/ フォルダへ個別アップロード
+      await apiUploadPdf(f.name, f.pdfB64);
+      document.getElementById('progbar_'+i).style.width='70%';
+
+      // ② JSONにはパスとサムネだけ記録（PDF本体は含めない）
+      const pdfUrl=_GH_RAW+'pdfs/'+encodeURIComponent(f.name);
+      const id='doc_'+Date.now()+'_'+i;
+      docs.unshift({id, name:f.name, tag, date, urgent, numPages:f.numPages, thumbData:f.thumbData, url:pdfUrl});
+      document.getElementById('progbar_'+i).style.width='90%';
+    }
+
+    // ③ docs.jsonを更新（サムネのみ、軽量）
+    await apiSaveDocs(docs, `Add ${pendingFiles.length} PDF(s): ${pendingFiles.map(f=>f.name).join(', ')}`);
+    localStorage.setItem(STORE_KEY,JSON.stringify(docs));
+
+    pendingFiles.forEach((_,i)=>{ document.getElementById('progbar_'+i).style.width='100%'; });
+    await sleep(300);
+    showToast(`${pendingFiles.length}件をGitHubに保存しました ✓`);
+  }catch(e){
+    showToast('エラー: '+e.message,'error');
+    console.error(e);
+  }
+
+  pendingFiles=[]; renderPending();
+  document.getElementById('meta-form').style.display='none';
+  document.getElementById('meta-urgent').checked=false;
+  btn.disabled=false; btn.innerHTML='<span>✓ GitHubへアップロード</span>';
+  updateSbCount();
+}
+
+// ========== MANAGE ==========
+function renderManage(q='',tagFilter=''){
+  const tbody=document.getElementById('manage-tbody');
+  let filtered=[...docs].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(q) filtered=filtered.filter(d=>d.name.toLowerCase().includes(q.toLowerCase()));
+  if(tagFilter) filtered=filtered.filter(d=>d.tag===tagFilter);
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px;">ドキュメントがありません</td></tr>';
+    return;
+  }
+  tbody.innerHTML=filtered.map(d=>{
+    const t=TAG[d.tag]||TAG.other;
+    return `<tr>
+      <td><div class="doc-thumb-cell">${d.thumbData?`<img src="${d.thumbData}">`:'📄'}</div></td>
+      <td>
+        <div style="font-size:13px;font-weight:600;">${d.name}</div>
+        ${d.urgent?'<span class="urgent-mark">⚠ 重要</span>':''}
+      </td>
+      <td><span class="nbadge ${t.cls}">${t.label}</span></td>
+      <td style="font-size:12px;color:var(--text2);">${d.date}</td>
+      <td style="font-size:12px;color:var(--text2);text-align:center;">${d.numPages||'?'}</td>
+      <td>
+        <button class="action-btn" onclick="toggleUrgent('${d.id}')">${d.urgent?'⚠解除':'⚠重要'}</button>
+        <button class="action-btn action-del" onclick="deleteDoc('${d.id}')">削除</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function deleteDoc(id){
+  if(!confirm('このドキュメントを削除しますか？（GitHubからも削除されます）')) return;
+  docs=docs.filter(d=>d.id!==id);
+  try{
+    await apiSaveDocs(docs, 'Delete document: '+id);
+    localStorage.setItem(STORE_KEY,JSON.stringify(docs));
+    showToast('削除しました ✓');
+  }catch(e){ showToast('削除エラー: '+e.message,'error'); }
+  renderManage(); updateSbCount();
+}
+
+async function toggleUrgent(id){
+  const d=docs.find(x=>x.id===id);
+  if(!d) return;
+  d.urgent=!d.urgent;
+  try{
+    await apiSaveDocs(docs, (d.urgent?'Set urgent: ':'Unset urgent: ')+d.name);
+    localStorage.setItem(STORE_KEY,JSON.stringify(docs));
+    showToast(d.urgent?'重要フラグを設定しました':'重要フラグを解除しました');
+  }catch(e){ showToast('エラー: '+e.message,'error'); }
+  renderManage();
+}
+
+// ========== BLOG POST ==========
+let pendingBlogImg=null;
+
+function onBlogImgDragOver(e){ e.preventDefault(); document.getElementById('blog-img-zone').classList.add('drag'); }
+function onBlogImgDragLeave(){ document.getElementById('blog-img-zone').classList.remove('drag'); }
+function onBlogImgDrop(e){ e.preventDefault(); document.getElementById('blog-img-zone').classList.remove('drag'); if(e.dataTransfer.files[0]) handleBlogImg(e.dataTransfer.files[0]); }
+function onBlogImgSelect(e){ if(e.target.files[0]) handleBlogImg(e.target.files[0]); e.target.value=''; }
+
+function handleBlogImg(f){
+  if(!f.type.startsWith('image/')){ showToast('画像ファイルを選択してください','error'); return; }
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    pendingBlogImg=ev.target.result;
+    document.getElementById('blog-img-preview').innerHTML=`
+      <div style="position:relative;display:inline-block;">
+        <img src="${pendingBlogImg}" style="max-width:100%;max-height:160px;border-radius:var(--radius);">
+        <button onclick="clearBlogImg(event)" style="position:absolute;top:6px;right:6px;width:24px;height:24px;background:rgba(0,0,0,.55);color:white;border:none;border-radius:50%;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+      </div>`;
+  };
+  reader.readAsDataURL(f);
+}
+function clearBlogImg(e){ if(e)e.stopPropagation(); pendingBlogImg=null; resetBlogImgPreview(); }
+function resetBlogImgPreview(){
+  document.getElementById('blog-img-preview').innerHTML=`<div style="font-size:24px;margin-bottom:4px;">🖼</div><div style="font-size:12px;color:var(--text2);">クリック または ドラッグ＆ドロップ（JPG・PNG・GIF）</div>`;
+}
+
+async function submitBlogPost(){
+  const title=document.getElementById('b-title').value.trim();
+  const author=document.getElementById('b-author').value.trim();
+  const content=document.getElementById('b-content').value.trim();
+  const msg=document.getElementById('blog-post-msg');
+  if(!title||!author||!content){ msg.style.color='#a32d2d'; msg.textContent='タイトル・著者名・本文は必須です'; return; }
+  if(!_ghToken()){ showToast('GitHub Tokenを設定してください','error'); return; }
+
+  const btn=document.getElementById('blog-submit-btn');
+  btn.disabled=true; btn.innerHTML='<div class="ring"></div><span>GitHubへ投稿中...</span>';
+  msg.textContent='';
+
+  try{
+    const remote=await apiGetBlogs().catch(()=>null);
+    if(remote) blogDocs=remote;
+
+    const tags=document.getElementById('b-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+    const post={
+      id:'blog_'+Date.now(),
+      title,author,content,
+      category:document.getElementById('b-category').value,
+      tags,
+      imageData:pendingBlogImg,
+      date:document.getElementById('b-date').value||new Date().toISOString()
+    };
+    blogDocs.unshift(post);
+    await apiSaveBlogs(blogDocs, 'New blog post: '+title);
+    localStorage.setItem(BLOG_KEY,JSON.stringify(blogDocs));
+    showToast('ブログをGitHubに投稿しました ✓');
+    msg.style.color='var(--green)'; msg.textContent='投稿完了！一般ページのブログで確認できます。';
+    clearBlogForm();
+  }catch(e){
+    showToast('エラー: '+e.message,'error');
+    msg.style.color='#a32d2d'; msg.textContent='エラー: '+e.message;
+  }
+  btn.disabled=false; btn.innerHTML='✓ GitHubへ投稿';
+  updateSbCount();
+}
+
+function clearBlogForm(){
+  ['b-title','b-author','b-tags','b-content'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('b-date').value=new Date().toISOString().slice(0,10);
+  clearBlogImg();
+  document.getElementById('blog-post-msg').textContent='';
+}
+
+// ========== BLOG MANAGE ==========
+function renderBlogManage(q='',catFilter=''){
+  const tbody=document.getElementById('blog-manage-tbody');
+  let list=[...blogDocs].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(q) list=list.filter(b=>b.title.includes(q)||b.author.includes(q));
+  if(catFilter) list=list.filter(b=>b.category===catFilter);
+  if(!list.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:32px;">投稿がありません</td></tr>'; return; }
+  tbody.innerHTML=list.map(b=>{
+    const cat=BLOG_CAT[b.category]||BLOG_CAT.other;
+    const dateStr=new Date(b.date).toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
+    return `<tr>
+      <td><div class="doc-thumb-cell" style="width:48px;height:36px;">${b.imageData?`<img src="${b.imageData}">`:'📝'}</div></td>
+      <td style="font-size:13px;font-weight:600;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(b.title)}</td>
+      <td>${cat.cls?`<span class="nbadge ${cat.cls}">${cat.label}</span>`:cat.label}</td>
+      <td style="font-size:12px;color:var(--text2);">${esc(b.author)}</td>
+      <td style="font-size:12px;color:var(--text2);">${dateStr}</td>
+      <td><button class="action-btn action-del" onclick="deleteBlog('${b.id}')">削除</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function deleteBlog(id){
+  if(!confirm('この投稿を削除しますか？（GitHubからも削除されます）')) return;
+  blogDocs=blogDocs.filter(b=>b.id!==id);
+  try{
+    await apiSaveBlogs(blogDocs, 'Delete blog post: '+id);
+    localStorage.setItem(BLOG_KEY,JSON.stringify(blogDocs));
+    showToast('削除しました ✓');
+  }catch(e){ showToast('削除エラー: '+e.message,'error'); }
+  renderBlogManage(); updateSbCount();
+}
+
+// ========== UTILS ==========
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function showToast(msg,type=''){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='toast show'+(type==='error'?' error':'');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ========== REPAIR TOOLS ==========
+async function repairDocsJson(){
+  const msg=document.getElementById('repair-msg');
+  msg.style.color='#666'; msg.textContent='docs.json を確認中...';
+  try{
+    // GitHubから既存を読もうとする
+    const existing=await ghLoadJson('data/docs.json');
+    if(Array.isArray(existing)){
+      // 壊れていないがpdfB64が含まれていれば除去
+      const cleaned=existing.map(d=>{const {pdfB64,...rest}=d;return rest;});
+      await apiSaveDocs(cleaned, 'Repair: remove pdfB64 from docs.json');
+      msg.style.color='var(--green)'; msg.textContent=`✅ 修復完了（${cleaned.length}件、pdfB64を除去してURL方式に変換）`;
+      docs=cleaned; localStorage.setItem(STORE_KEY,JSON.stringify(docs)); updateSbCount();
+    } else {
+      // nullまたは壊れている→空配列で初期化
+      await apiSaveDocs([], 'Repair: initialize docs.json');
+      docs=[]; localStorage.setItem(STORE_KEY,'[]');
+      msg.style.color='var(--green)'; msg.textContent='✅ docs.json を空で初期化しました。PDFを再アップロードしてください。';
+      updateSbCount();
+    }
+  }catch(e){ msg.style.color='#a32d2d'; msg.textContent='❌ エラー: '+e.message; }
+}
+
+async function repairBlogsJson(){
+  const msg=document.getElementById('repair-msg');
+  msg.textContent='blogs.json を確認中...';
+  try{
+    const existing=await ghLoadJson('data/blogs.json');
+    if(Array.isArray(existing)){
+      await apiSaveBlogs(existing, 'Repair: verify blogs.json');
+      msg.style.color='var(--green)'; msg.textContent=`✅ blogs.json は正常です（${existing.length}件）`;
+    } else {
+      await apiSaveBlogs([], 'Repair: initialize blogs.json');
+      msg.style.color='var(--green)'; msg.textContent='✅ blogs.json を空で初期化しました。';
+    }
+  }catch(e){ msg.style.color='#a32d2d'; msg.textContent='❌ エラー: '+e.message; }
+}
+
+async function checkGhFiles(){
+  const msg=document.getElementById('repair-msg');
+  msg.textContent='確認中...';
+  const results=[];
+  for(const path of ['data/docs.json','data/blogs.json']){
+    try{
+      const res2=await fetch('https://api.github.com/repos/'+GITHUB.owner+'/'+GITHUB.repo+'/contents/'+path,{headers:{Authorization:'token '+_ghToken()}});
+      const d=await res2.json();
+      const size=Math.round((d.size||0)/1024);
+      results.push(`✅ ${path}（${size}KB）`);
+    }catch(e){ results.push(`❌ ${path}：見つかりません`); }
+  }
+  msg.style.color='var(--text)'; msg.innerHTML=results.join('<br>');
+}
+
+// ========== INIT ==========
+async function initAdmin(){
+  document.getElementById('meta-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('b-date').value=new Date().toISOString().slice(0,10);
+  // ローカルキャッシュから先に表示
+  const r=localStorage.getItem(STORE_KEY); docs=r?JSON.parse(r):[];
+  const rb=localStorage.getItem(BLOG_KEY); blogDocs=rb?JSON.parse(rb):[];
+  updateSbCount();
+  // Tokenがあれば接続確認
+  if(_ghToken()){
+    const res=await ghCheckToken();
+    updateGhStatusBadge(res);
+    if(res.ok){
+      // GitHubから最新を読み込む
+      const remote=await apiGetDocs().catch(()=>null);
+      if(remote){ docs=remote; localStorage.setItem(STORE_KEY,JSON.stringify(docs)); }
+      const remoteB=await apiGetBlogs().catch(()=>null);
+      if(remoteB){ blogDocs=remoteB; localStorage.setItem(BLOG_KEY,JSON.stringify(blogDocs)); }
+      updateSbCount();
+    }
+  }else{
+    updateGhStatusBadge({ok:false,msg:'Token未設定'});
+    showToast('⚠ GitHub Tokenを設定してください（設定 → GitHub設定）','error');
+  }
+}
+</script>
+</body>
+</html>

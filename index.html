@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>社内ポータル</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#1D9E75;--green-d:#0F6E56;--green-dd:#085041;--green-l:#E1F5EE;
+  --red:#E24B4A;--red-l:#FCEBEB;--amber:#EF9F27;--amber-l:#FAEEDA;
+  --blue:#378ADD;--blue-l:#E6F1FB;
+  --bg:#f5f4f1;--surface:#fff;--border:rgba(0,0,0,0.09);
+  --text:#1a1a1a;--text2:#666;--text3:#999;
+  --radius:10px;--radius-lg:14px;
+  --nav-h:52px;
+}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:'Hiragino Sans','Yu Gothic UI',sans-serif;font-size:14px;color:var(--text);background:var(--bg);padding-bottom:env(safe-area-inset-bottom);}
+a{color:inherit;text-decoration:none;}
+button{font-family:inherit;}
+
+/* ===== TOP NAV (PC) ===== */
+.nav{height:var(--nav-h);background:var(--surface);border-bottom:0.5px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:4px;position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+.nav-logo{width:30px;height:30px;background:var(--green);border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-right:4px;}
+.nav-logo svg{width:16px;height:16px;fill:white;}
+.nav-name{font-size:13px;font-weight:700;color:var(--green-dd);margin-right:6px;white-space:nowrap;}
+.nav-tab{padding:6px 12px;border-radius:var(--radius);font-size:12px;cursor:pointer;color:var(--text2);border:none;background:none;white-space:nowrap;transition:all .15s;}
+.nav-tab:hover{background:#f0f0ee;color:var(--text);}
+.nav-tab.active{background:var(--green-l);color:var(--green-dd);font-weight:600;}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.nav-avatar{width:30px;height:30px;border-radius:50%;background:var(--green);color:white;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.admin-link{font-size:11px;color:var(--text3);padding:4px 10px;border:0.5px solid var(--border);border-radius:20px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.admin-link:hover{color:var(--green);border-color:var(--green);}
+
+/* ===== BOTTOM TAB NAV (mobile) ===== */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:0.5px solid var(--border);z-index:200;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -1px 8px rgba(0,0,0,.06);}
+.bottom-nav-inner{display:flex;align-items:center;justify-content:space-around;height:56px;}
+.bn-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--text3);border:none;background:none;padding:6px 0;transition:color .15s;}
+.bn-tab.active{color:var(--green);}
+.bn-tab-icon{font-size:20px;line-height:1;}
+.bn-tab-label{font-size:10px;font-weight:600;}
+
+/* ===== PAGE ===== */
+.page{display:none;padding:14px;max-width:900px;margin:0 auto;}
+.page.active{display:block;}
+.section-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;}
+
+/* ===== HERO ===== */
+.hero{background:linear-gradient(135deg,var(--green) 0%,var(--green-d) 100%);border-radius:var(--radius-lg);padding:18px 20px 16px;color:white;margin-bottom:12px;position:relative;overflow:hidden;}
+.hero::after{content:'';position:absolute;right:-20px;top:-20px;width:120px;height:120px;background:rgba(255,255,255,.07);border-radius:50%;}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.hero-greeting h1{font-size:17px;font-weight:700;margin-bottom:2px;}
+.hero-greeting p{font-size:11px;opacity:.8;}
+.hero-date-block{text-align:right;flex-shrink:0;}
+.hero-date{font-size:12px;opacity:.8;background:rgba(255,255,255,.15);border-radius:6px;padding:3px 10px;display:inline-block;}
+.hero-event{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.2);}
+.hero-event-title{font-size:10px;font-weight:600;opacity:.7;margin-bottom:6px;letter-spacing:.5px;}
+.hero-event-list{display:flex;flex-wrap:wrap;gap:6px;}
+.hero-event-chip{background:rgba(255,255,255,.18);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;}
+.hero-event-chip-date{opacity:.75;font-size:10px;}
+.hero-loading{font-size:11px;opacity:.6;}
+
+/* ===== ALERT ===== */
+.alert{background:var(--red-l);border:0.5px solid #f7c1c1;border-radius:var(--radius);padding:10px 14px;display:flex;gap:8px;align-items:center;margin-bottom:10px;}
+.alert-dot{width:7px;height:7px;background:var(--red);border-radius:50%;flex-shrink:0;animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.alert-text{font-size:12px;color:#a32d2d;font-weight:600;}
+
+/* ===== STATS ===== */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.stat{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;}
+.stat-label{font-size:10px;color:var(--text2);margin-bottom:2px;}
+.stat-val{font-size:20px;font-weight:700;}
+
+/* ===== TWO COL ===== */
+.two-col{display:grid;grid-template-columns:1fr 280px;gap:12px;}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;}
+
+/* ===== NEWS LIST ===== */
+.news-item{display:flex;gap:8px;padding:9px 0;border-bottom:0.5px solid var(--border);align-items:flex-start;cursor:pointer;transition:opacity .15s;}
+.news-item:hover{opacity:.7;}
+.news-item:last-child{border-bottom:none;}
+.nbadge{font-size:10px;font-weight:600;border-radius:4px;padding:2px 7px;white-space:nowrap;margin-top:1px;flex-shrink:0;}
+.bs{background:var(--red-l);color:#a32d2d;}.bn{background:var(--amber-l);color:#854f0b;}
+.br{background:var(--green-l);color:var(--green-dd);}.bb{background:var(--blue-l);color:#185fa5;}
+.news-title{font-size:12px;font-weight:600;line-height:1.4;}
+.news-date{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* ===== QUICK LINKS ===== */
+.ql-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;}
+.ql-item{background:#f5f4f1;border-radius:var(--radius);padding:10px;cursor:pointer;display:flex;align-items:center;gap:8px;border:0.5px solid transparent;transition:all .15s;}
+.ql-item:hover{background:var(--surface);border-color:var(--border);}
+.ql-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.ql-label{font-size:12px;font-weight:600;}
+.ql-sub{font-size:10px;color:var(--text2);}
+
+
+/* ===== WEATHER ===== */
+.weather-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.18);border-radius:20px;padding:4px 10px;}
+.weather-icon{font-size:18px;line-height:1;}
+.weather-temp{font-size:13px;font-weight:700;color:white;}
+.weather-desc{font-size:10px;opacity:.8;color:white;}
+.weather-loc{font-size:10px;opacity:.65;color:white;}
+/* ===== UPCOMING EVENTS WIDGET ===== */
+.event-widget{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:12px;}
+.event-item{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border);}
+.event-item:last-child{border-bottom:none;}
+.event-date-badge{width:38px;height:38px;border-radius:8px;background:var(--green-l);color:var(--green-dd);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+.event-date-m{font-size:9px;font-weight:600;line-height:1;}
+.event-date-d{font-size:15px;font-weight:700;line-height:1.1;}
+.event-info{flex:1;min-width:0;}
+.event-name{font-size:13px;font-weight:600;line-height:1.3;}
+.event-time{font-size:10px;color:var(--text3);margin-top:1px;}
+.event-today{background:var(--green);color:white;}
+.event-today .event-date-m,.event-today .event-date-d{color:white;}
+.event-empty{font-size:12px;color:var(--text3);text-align:center;padding:14px 0;}
+
+/* ===== BLOG GRID ===== */
+.blog-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.blog-mini-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;transition:border-color .15s;}
+.blog-mini-card:hover{border-color:var(--green);}
+.blog-mini-cover{height:60px;background:#eceae4;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.blog-mini-cover img{width:100%;height:100%;object-fit:cover;}
+.blog-mini-body{padding:7px 9px;}
+.blog-mini-cat{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;display:inline-block;margin-bottom:4px;}
+.blog-mini-title{font-size:11px;font-weight:600;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+.blog-mini-foot{font-size:9px;color:var(--text3);margin-top:3px;}
+
+/* ===== NOTICE PAGE ===== */
+.filter-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center;}
+.filter-btn{padding:5px 13px;border:0.5px solid var(--border);border-radius:20px;font-size:12px;background:var(--surface);cursor:pointer;color:var(--text2);transition:all .15s;}
+.filter-btn:hover{border-color:var(--green);color:var(--green);}
+.filter-btn.active{background:var(--green);color:white;border-color:var(--green);font-weight:600;}
+.notice-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;margin-bottom:10px;display:flex;gap:12px;cursor:pointer;transition:border-color .15s;}
+.notice-card:hover{border-color:var(--green);}
+.notice-thumb{width:56px;height:72px;background:#eceae4;border-radius:var(--radius);flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.notice-thumb img{width:100%;height:100%;object-fit:cover;}
+.notice-body{flex:1;min-width:0;}
+.notice-title{font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.4;}
+.notice-footer{font-size:10px;color:var(--text3);margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.pdf-icon-badge{display:inline-flex;align-items:center;gap:3px;background:var(--green-l);color:var(--green-dd);font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;}
+.notice-dl{font-size:11px;color:var(--green);font-weight:600;border:0.5px solid var(--green);border-radius:6px;padding:4px 10px;margin-left:auto;white-space:nowrap;flex-shrink:0;align-self:flex-start;}
+
+/* ===== MODAL ===== */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:300;align-items:center;justify-content:center;padding:16px;}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--surface);border-radius:var(--radius-lg);width:min(540px,100%);max-height:88vh;overflow:auto;display:flex;flex-direction:column;}
+.modal-hd{padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:var(--surface);}
+.modal-title{font-size:14px;font-weight:600;flex:1;}
+.modal-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2);padding:2px 6px;line-height:1;}
+.modal-pages{padding:14px;display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+.page-th{border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;background:#eceae4;position:relative;}
+.page-th canvas{width:100%;height:100%;object-fit:cover;}
+.page-num{position:absolute;bottom:4px;right:5px;font-size:9px;background:rgba(0,0,0,.4);color:white;padding:1px 5px;border-radius:3px;}
+.ring{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ===== CALENDAR SETTINGS ===== */
+.cal-settings-btn{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text3);border:0.5px solid var(--border);border-radius:20px;padding:3px 10px;cursor:pointer;background:none;margin-top:8px;transition:all .15s;}
+.cal-settings-btn:hover{color:var(--green);border-color:var(--green);}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:680px){
+  /* ナビゲーション */
+  .nav .nav-tab:not(.active){display:none;}
+  .nav-name{font-size:12px;}
+  .bottom-nav{display:block;}
+  body{padding-bottom:calc(56px + env(safe-area-inset-bottom));}
+
+  /* ページ */
+  .page{padding:10px;}
+
+  /* ヒーロー */
+  .hero{padding:14px 16px 12px;}
+  .hero-greeting h1{font-size:15px;}
+
+  /* stats 2列 */
+  .stats{grid-template-columns:1fr 1fr;}
+  .stats .stat:last-child{display:none;}
+
+  /* 1カラム */
+  .two-col{grid-template-columns:1fr;}
+
+  /* ブログ */
+  .blog-mini-grid{grid-template-columns:1fr 1fr;}
+
+  /* お知らせカード */
+  .notice-thumb{width:44px;height:56px;}
+  .notice-dl{display:none;}
+}
+
+@media(max-width:380px){
+  .hero-event-chip{font-size:10px;padding:3px 8px;}
+  .blog-mini-grid{grid-template-columns:1fr;}
+}
+
+/* Google Calendar設定モーダル */
+.cal-modal-box{background:var(--surface);border-radius:var(--radius-lg);width:min(440px,96vw);padding:20px;}
+.cal-input{width:100%;height:38px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 12px;font-size:13px;outline:none;font-family:inherit;margin-bottom:8px;transition:border-color .15s;}
+.cal-input:focus{border-color:var(--green);}
+.cal-save-btn{height:38px;background:var(--green);color:white;border:none;border-radius:var(--radius);padding:0 20px;font-size:13px;font-weight:600;cursor:pointer;width:100%;}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="nav">
+  <div class="nav-logo"><svg viewBox="0 0 16 16"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg></div>
+  <span class="nav-name">社内ポータル</span>
+  <button class="nav-tab active" onclick="showPage('home',this,0)">ホーム</button>
+  <button class="nav-tab" onclick="showPage('notice',this,1)">お知らせ</button>
+  <a class="nav-tab" href="blog.html">社内ブログ</a>
+
+  <div class="nav-right">
+    <a class="admin-link" href="admin.html">⚙ 管理者</a>
+    <div class="nav-avatar" id="nav-avatar" onclick="openNamePrompt()">?</div>
+  </div>
+</nav>
+
+<!-- BOTTOM NAV (mobile) -->
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="bn-tab active" id="bnt-home" onclick="showPage('home',null,0)">
+      <div class="bn-tab-icon">🏠</div><div class="bn-tab-label">ホーム</div>
+    </button>
+    <button class="bn-tab" id="bnt-notice" onclick="showPage('notice',null,1)">
+      <div class="bn-tab-icon">📋</div><div class="bn-tab-label">お知らせ</div>
+    </button>
+    <a class="bn-tab" href="blog.html">
+      <div class="bn-tab-icon">✏️</div><div class="bn-tab-label">ブログ</div>
+    </a>
+
+  </div>
+</div>
+
+<!-- NAME PROMPT -->
+<div id="name-prompt-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:14px;padding:28px;width:min(300px,100%);text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.2);">
+    <div style="font-size:32px;margin-bottom:10px;">👋</div>
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">はじめまして！</div>
+    <div style="font-size:12px;color:#666;margin-bottom:14px;">あなたのお名前を教えてください</div>
+    <input id="name-prompt-input" type="text" placeholder="例：田中 健" maxlength="20"
+      style="width:100%;height:42px;border:0.5px solid rgba(0,0,0,.15);border-radius:10px;padding:0 12px;font-size:15px;text-align:center;outline:none;margin-bottom:12px;font-family:inherit;"
+      onkeydown="if(event.key==='Enter')saveUsername()">
+    <button onclick="saveUsername()" style="width:100%;height:42px;background:#1D9E75;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">決定</button>
+  </div>
+</div>
+
+<!-- GOOGLE CALENDAR SETTINGS MODAL -->
+<div id="cal-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center;padding:16px;">
+  <div class="cal-modal-box">
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">📅 Googleカレンダー設定</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+      Googleカレンダーの「<b>カレンダーID</b>」と「<b>APIキー</b>」を入力してください。<br>
+      <span style="color:var(--text3);">※ カレンダーを「一般公開」に設定する必要があります</span>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;">カレンダーID</div>
+    <input class="cal-input" type="text" id="cal-id-input" placeholder="xxx@group.calendar.google.com または メールアドレス">
+    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;">Google API キー</div>
+    <input class="cal-input" type="text" id="cal-key-input" placeholder="AIzaSy...">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.6;">
+      APIキー取得：Google Cloud Console → APIとサービス → 認証情報 → APIキーを作成<br>
+      有効にするAPI：Google Calendar API
+    </div>
+    <button class="cal-save-btn" onclick="saveCalSettings()">保存して反映</button>
+    <button onclick="closeCalModal()" style="width:100%;height:38px;margin-top:8px;background:none;border:0.5px solid var(--border);border-radius:var(--radius);font-size:13px;cursor:pointer;">キャンセル</button>
+  </div>
+</div>
+
+<!-- ===== HOME ===== -->
+<div class="page active" id="page-home">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-top">
+      <div class="hero-greeting">
+        <h1 id="greeting-text">おはようございます</h1>
+        <p id="notice-sub-text">ようこそ！お名前を設定してください</p>
+      </div>
+      <div class="hero-date-block">
+        <div class="hero-date" id="today-date"></div>
+        <div id="weather-block" style="margin-top:6px;text-align:right;min-height:26px;">
+          <span style="font-size:11px;opacity:.5;">天気取得中...</span>
+        </div>
+      </div>
+    </div>
+    <div id="hero-event-list" style="display:none"></div>
+  </div>
+
+  <!-- ALERT -->
+  <div class="alert" id="alert-bar" style="display:none">
+    <div class="alert-dot"></div>
+    <div class="alert-text" id="alert-text"></div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="stat-label">今月の新着お知らせ</div><div class="stat-val" id="stat-notice">—</div></div>
+    <div class="stat"><div class="stat-label">ブログ投稿数</div><div class="stat-val" id="stat-blog">—</div></div>
+    <div class="stat"><div class="stat-label">登録ドキュメント数</div><div class="stat-val" id="stat-docs">—</div></div>
+  </div>
+
+  <div class="two-col">
+    <!-- LEFT -->
+    <div>
+      <div class="section-label">最新のお知らせ</div>
+      <div class="card" id="home-news-list">
+        <div style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0;">読み込み中...</div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:8px;">
+        <div class="section-label" style="margin-bottom:0">最新のブログ</div>
+        <a href="blog.html" style="font-size:11px;color:var(--green);">すべて見る →</a>
+      </div>
+      <div class="blog-mini-grid" id="home-blog-list"></div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <!-- UPCOMING EVENTS -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="section-label" style="margin-bottom:0">📅 直近のイベント</div>
+        <button class="cal-settings-btn" onclick="openCalModal()">⚙ 設定</button>
+      </div>
+      <div class="event-widget" id="event-widget-main">
+        <div class="event-empty">カレンダーを設定すると<br>イベントが表示されます</div>
+      </div>
+
+      <!-- QUICK LINKS -->
+      <div class="section-label">クイックリンク</div>
+      <div class="ql-grid">
+        <div class="ql-item" onclick="showPage('notice',null,1)"><div class="ql-icon" style="background:var(--green-l)">📋</div><div><div class="ql-label">お知らせ</div><div class="ql-sub">PDF・連絡事項</div></div></div>
+        <div class="ql-item" onclick="location.href='blog.html'"><div class="ql-icon" style="background:var(--blue-l)">✏️</div><div><div class="ql-label">ブログ</div><div class="ql-sub">社内投稿</div></div></div>
+        <div class="ql-item" href="admin.html" onclick="location.href='admin.html'"><div class="ql-icon" style="background:var(--amber-l)">⚙️</div><div><div class="ql-label">管理者ページ</div><div class="ql-sub">投稿・設定</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== NOTICE ===== -->
+<div class="page" id="page-notice">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="font-size:17px;font-weight:600;">お知らせ</div>
+    <span style="font-size:11px;color:var(--text3)">日付の新しい順</span>
+  </div>
+  <!-- 検索バー -->
+  <div style="position:relative;margin-bottom:10px;">
+    <input type="text" id="notice-search" placeholder="🔍 PDFファイル名で検索..." oninput="renderNotice()"
+      style="width:100%;height:40px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 14px 0 14px;font-size:13px;outline:none;background:var(--surface);font-family:inherit;transition:border-color .15s;"
+      onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=''">
+  </div>
+  <!-- フィルター -->
+  <div class="filter-row">
+    <button class="filter-btn active" onclick="filterNotice('all',this)">すべて</button>
+    <button class="filter-btn" onclick="filterNotice('rule',this)">📋 規約・規程</button>
+    <button class="filter-btn" onclick="filterNotice('notice',this)">📢 連絡事項</button>
+    <button class="filter-btn" onclick="filterNotice('other',this)">その他</button>
+  </div>
+  <div id="notice-list"><div style="color:var(--text3);font-size:13px;text-align:center;padding:40px 0;">お知らせがありません</div></div>
+</div>
+
+
+<!-- PDF MODAL -->
+<div class="modal-bg" id="pdf-modal" onclick="if(event.target===this)closePdfModal()">
+  <div class="modal-box">
+    <div class="modal-hd">
+      <div class="modal-title" id="pdf-modal-title"></div>
+      <button class="modal-close" onclick="closePdfModal()">✕</button>
+    </div>
+    <div class="modal-pages" id="pdf-modal-pages"></div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+// ===== CONSTANTS =====
+const TAG={
+  security:{label:'セキュリティ',bg:'#FCEBEB',color:'#A32D2D',cls:'bs'},
+  rule:{label:'規約・規程',bg:'#E1F5EE',color:'#085041',cls:'br'},
+  notice:{label:'連絡事項',bg:'#FAEEDA',color:'#854F0B',cls:'bn'},
+  other:{label:'その他',bg:'#E6F1FB',color:'#185FA5',cls:'bb'}
+};
+const CAT_BLOG={
+  tech:{label:'💡 技術',bg:'#E6F1FB',color:'#185fa5'},
+  report:{label:'🏭 現場',bg:'#E1F5EE',color:'#085041'},
+  idea:{label:'💭 アイデア',bg:'#FAEEDA',color:'#854f0b'},
+  event:{label:'🎉 イベント',bg:'#EEEDFE',color:'#3C3489'},
+  other:{label:'その他',bg:'#f5f4f1',color:'#666'}
+};
+const STORE_KEY='portal_docs';
+const BLOG_KEY='portal_blogs';
+const NAME_KEY='portal_username';
+const CAL_ID_KEY='portal_cal_id';
+const CAL_KEY_KEY='portal_cal_key';
+
+let docs=[], blogs=[];
+
+// ===== NAVIGATION =====
+const PAGE_IDS=['home','notice','blog'];
+const BNT_IDS=['bnt-home','bnt-notice',null];
+
+function showPage(id,btn,idx){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.bn-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  if(idx!==undefined && BNT_IDS[idx]) document.getElementById(BNT_IDS[idx]).classList.add('active');
+  if(id==='notice') renderNotice();
+  window.scrollTo(0,0);
+}
+
+// ===== USER NAME =====
+function getUsername(){ return localStorage.getItem(NAME_KEY)||''; }
+function openNamePrompt(){
+  document.getElementById('name-prompt-input').value=getUsername();
+  document.getElementById('name-prompt-bg').style.display='flex';
+  setTimeout(()=>document.getElementById('name-prompt-input').focus(),100);
+}
+function saveUsername(){
+  const v=document.getElementById('name-prompt-input').value.trim();
+  if(!v) return;
+  localStorage.setItem(NAME_KEY,v);
+  document.getElementById('name-prompt-bg').style.display='none';
+  updateGreeting(); updateAvatar();
+}
+function updateGreeting(){
+  const name=getUsername();
+  const h=new Date().getHours();
+  const greet=h<11?'おはようございます':h<18?'こんにちは':'こんばんは';
+  document.getElementById('greeting-text').textContent=name?greet+'、'+name+'さん':greet;
+  document.getElementById('notice-sub-text').textContent=name?'今日もよろしくお願いします':'ようこそ！お名前を設定してください';
+}
+function updateAvatar(){
+  const name=getUsername();
+  document.getElementById('nav-avatar').textContent=name?name.slice(0,2):'?';
+}
+
+// ===== DATA (api.js に委譲 — XSERVER移行時は api.js の PORTAL_API_MODE を変更するだけ) =====
+async function loadDocs(){
+  docs = await apiLoad('docs', STORE_KEY);
+}
+async function loadBlogs(){
+  blogs = await apiLoad('blogs', BLOG_KEY);
+}
+
+// ===== DATE =====
+function formatDateShort(d){ return (d.getMonth()+1)+'/'+(d.getDate()); }
+function today(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+
+// ===== GOOGLE CALENDAR =====
+const CAL_ID_DEMO=''; // 設定前はデモデータを使用
+
+function getCalId(){ return localStorage.getItem(CAL_ID_KEY)||''; }
+function getCalKey(){ return localStorage.getItem(CAL_KEY_KEY)||''; }
+
+function openCalModal(){
+  document.getElementById('cal-id-input').value=getCalId();
+  document.getElementById('cal-key-input').value=getCalKey();
+  document.getElementById('cal-modal-bg').style.display='flex';
+}
+function closeCalModal(){ document.getElementById('cal-modal-bg').style.display='none'; }
+function saveCalSettings(){
+  const id=document.getElementById('cal-id-input').value.trim();
+  const key=document.getElementById('cal-key-input').value.trim();
+  localStorage.setItem(CAL_ID_KEY,id);
+  localStorage.setItem(CAL_KEY_KEY,key);
+  closeCalModal();
+  loadAndRenderCalendar();
+}
+
+async function loadAndRenderCalendar(){
+  const calId=getCalId();
+  const apiKey=getCalKey();
+
+  if(!calId||!apiKey){
+    // デモデータを表示
+    renderCalendarEvents(getDemoEvents());
+    return;
+  }
+
+  const now=new Date();
+  const timeMin=now.toISOString();
+  const timeMax=new Date(now.getTime()+30*86400000).toISOString(); // 30日後まで
+  const url=`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events?key=${apiKey}&timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime&maxResults=10`;
+
+  try{
+    const res=await fetch(url);
+    if(!res.ok) throw new Error('カレンダー取得失敗: '+res.status);
+    const data=await res.json();
+    const events=(data.items||[]).map(e=>({
+      title:e.summary||'(タイトルなし)',
+      start:new Date(e.start.dateTime||e.start.date),
+      end:e.end?new Date(e.end.dateTime||e.end.date):null,
+      allDay:!!e.start.date
+    }));
+    renderCalendarEvents(events);
+  }catch(e){
+    console.warn('Calendar error:',e);
+    renderCalendarEvents(getDemoEvents());
+    document.getElementById('hero-event-list').innerHTML='<span class="hero-loading" style="color:rgba(255,255,255,.5);">⚠ カレンダー設定を確認してください</span>';
+  }
+}
+
+function getDemoEvents(){
+  // カレンダー未設定時のデモ
+  const t=new Date(); t.setHours(0,0,0,0);
+  return [
+    {title:'朝会',start:new Date(t.getTime()+0*86400000),allDay:false},
+    {title:'出勤日',start:new Date(t.getTime()+4*86400000),allDay:true},
+    {title:'臨時出社',start:new Date(t.getTime()+6*86400000),allDay:true},
+  ];
+}
+
+function renderCalendarEvents(events){
+  const todayD=today();
+
+  // ===== ヒーロー内の直近3件 =====
+  const heroEl=document.getElementById('hero-event-list');
+  const upcoming=events.filter(e=>e.start>=todayD).slice(0,4);
+  document.getElementById('stat-event').textContent=upcoming.length;
+
+  if(!upcoming.length){
+    heroEl.innerHTML='<span class="hero-loading">直近30日のイベントはありません</span>';
+  }else{
+    heroEl.innerHTML=upcoming.map(e=>{
+      const isToday=e.start.toDateString()===todayD.toDateString();
+      const dateLabel=isToday?'今日':formatDateShort(e.start);
+      const timeLabel=e.allDay?'終日':e.start.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="hero-event-chip">
+        <span class="hero-event-chip-date">${dateLabel}</span>
+        <span>${e.title}</span>
+        ${!e.allDay?`<span class="hero-event-chip-date">${timeLabel}</span>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  // ===== サイドウィジェット =====
+  const widget=document.getElementById('event-widget-main');
+  const list=events.filter(e=>e.start>=todayD).slice(0,8);
+  if(!list.length){
+    widget.innerHTML='<div class="event-empty">直近のイベントはありません</div>';
+    return;
+  }
+  widget.innerHTML=list.map(e=>{
+    const isToday=e.start.toDateString()===todayD.toDateString();
+    const m=(e.start.getMonth()+1)+'月';
+    const d=e.start.getDate()+'日';
+    const timeStr=e.allDay?'終日':e.start.toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+    return `<div class="event-item">
+      <div class="event-date-badge ${isToday?'event-today':''}">
+        <div class="event-date-m">${m}</div>
+        <div class="event-date-d">${e.start.getDate()}</div>
+      </div>
+      <div class="event-info">
+        <div class="event-name">${e.title}${isToday?' <span style="font-size:9px;background:var(--red);color:white;padding:1px 5px;border-radius:3px;font-weight:600;">今日</span>':''}</div>
+        <div class="event-time">${timeStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== HOME RENDER =====
+function renderHomeNews(){
+  const el=document.getElementById('home-news-list');
+  const sorted=[...docs].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,5);
+  const thisMonth=new Date(); thisMonth.setDate(1); thisMonth.setHours(0,0,0,0);
+  document.getElementById('stat-notice').textContent=docs.filter(d=>new Date(d.date)>=thisMonth).length||0;
+  const sdEl=document.getElementById('stat-docs'); if(sdEl) sdEl.textContent=docs.length;
+  if(!sorted.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0;">お知らせがありません</div>';return;}
+  el.innerHTML=sorted.map(d=>{
+    const t=TAG[d.tag]||TAG.other;
+    const dateStr=new Date(d.date).toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
+    return `<div class="news-item" onclick="openPdfModal('${d.id}')">
+      <span class="nbadge ${t.cls}">${t.label}</span>
+      <div><div class="news-title">${d.name.replace(/\.pdf$/i,'')}</div><div class="news-date">${dateStr}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderHomeBlog(){
+  const el=document.getElementById('home-blog-list');
+  const sorted=[...blogs].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,4);
+  document.getElementById('stat-blog').textContent=blogs.length;
+  if(!sorted.length){
+    el.innerHTML='<div style="grid-column:1/-1;color:var(--text3);font-size:12px;text-align:center;padding:20px;background:var(--surface);border-radius:var(--radius-lg);border:0.5px solid var(--border);">まだ投稿がありません</div>';
+    return;
+  }
+  el.innerHTML=sorted.map(b=>{
+    const cat=CAT_BLOG[b.category]||CAT_BLOG.other;
+    const dateStr=new Date(b.date).toLocaleDateString('ja-JP',{month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
+    const emoji={tech:'💡',report:'🏭',idea:'💭',event:'🎉',other:'📝'}[b.category]||'📝';
+    return `<a href="blog.html" style="text-decoration:none;">
+      <div class="blog-mini-card">
+        <div class="blog-mini-cover">${b.imageData?`<img src="${b.imageData}">`:`<span style="font-size:26px;opacity:.35;">${emoji}</span>`}</div>
+        <div class="blog-mini-body">
+          <span class="blog-mini-cat" style="background:${cat.bg};color:${cat.color}">${cat.label}</span>
+          <div class="blog-mini-title">${b.title}</div>
+          <div class="blog-mini-foot">${b.author} · ${dateStr}</div>
+        </div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+// ===== NOTICE PAGE =====
+let currentFilter='all';
+function renderNotice(){
+  const list=document.getElementById('notice-list');
+  const q=(document.getElementById('notice-search')||{value:''}).value.trim().toLowerCase();
+  const sorted=[...docs].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  let filtered=currentFilter==='all'?sorted:sorted.filter(d=>d.tag===currentFilter);
+  if(q) filtered=filtered.filter(d=>d.name.toLowerCase().includes(q));
+  if(!filtered.length){list.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:40px 0;">該当するお知らせがありません</div>';return;}
+  list.innerHTML=filtered.map(d=>{
+    const t=TAG[d.tag]||TAG.other;
+    const dateStr=new Date(d.date).toLocaleDateString('ja-JP',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-');
+    const isNew=(Date.now()-new Date(d.date).getTime())<86400000*3;
+    return `<div class="notice-card" onclick="openPdfModal('${d.id}')">
+      <div class="notice-thumb">${d.thumbData?`<img src="${d.thumbData}">`:'📄'}</div>
+      <div class="notice-body">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap;">
+          <span class="nbadge ${t.cls}">${t.label}</span>
+          <span class="pdf-icon-badge">📄 PDF</span>
+          ${isNew?'<span class="nbadge bs">NEW</span>':''}
+          ${d.urgent?'<span class="nbadge bs">⚠ 重要</span>':''}
+        </div>
+        <div class="notice-title">${d.name.replace(/\.pdf$/i,'')}</div>
+        <div class="notice-footer"><span>${dateStr}</span><span>${d.numPages||'?'}ページ</span></div>
+      </div>
+      <a class="notice-dl" href="${d.url}" download="${d.name}" onclick="event.stopPropagation()">⬇ DL</a>
+    </div>`;
+  }).join('');
+}
+function filterNotice(tag,btn){
+  currentFilter=tag;
+  document.querySelectorAll('#page-notice .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderNotice();
+}
+
+// ===== ALERT =====
+function updateAlert(){
+  const urgents=docs.filter(d=>d.urgent).sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const bar=document.getElementById('alert-bar');
+  if(urgents.length){bar.style.display='flex';document.getElementById('alert-text').textContent='【重要】'+urgents[0].name.replace(/\.pdf$/i,'');}
+  else{bar.style.display='none';}
+}
+
+// ===== PDF MODAL =====
+async function openPdfModal(id){
+  const d=docs.find(x=>x.id===id);
+  if(!d) return;
+  document.getElementById('pdf-modal-title').textContent=d.name.replace(/\.pdf$/i,'');
+  const mp=document.getElementById('pdf-modal-pages');
+  mp.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;"><div class="ring"></div></div>';
+  document.getElementById('pdf-modal').classList.add('open');
+  const src=d.pdfB64||d.url;
+  if(!src){mp.innerHTML='<div style="grid-column:1/-1;color:var(--text3);padding:20px;text-align:center;">PDFのURLが見つかりません</div>';return;}
+  try{
+    const pdfDoc=await pdfjsLib.getDocument(src).promise;
+    mp.innerHTML='';
+    for(let i=1;i<=pdfDoc.numPages;i++){
+      const wrap=document.createElement('div');wrap.className='page-th';
+      wrap.innerHTML='<div class="ring"></div>';
+      mp.appendChild(wrap);
+      const page=await pdfDoc.getPage(i);
+      const vp=page.getViewport({scale:1.2});
+      const canvas=document.createElement('canvas');
+      canvas.width=vp.width;canvas.height=vp.height;
+      await page.render({canvasContext:canvas.getContext('2d'),viewport:vp}).promise;
+      wrap.innerHTML=`<span class="page-num">${i}/${pdfDoc.numPages}</span>`;
+      wrap.appendChild(canvas);
+    }
+  }catch(e){
+    mp.innerHTML='<div style="grid-column:1/-1;color:red;padding:20px;text-align:center;">PDFを読み込めませんでした</div>';
+  }
+}
+function closePdfModal(){document.getElementById('pdf-modal').classList.remove('open');}
+
+
+// ===== WEATHER (Open-Meteo + 管理者設定の都市名) =====
+const WEATHER_CITY_KEY='portal_weather_city'; // 例: "Ushiku" "Tokyo" "大阪" "300-1200"
+const WMO_ICONS={
+  0:'☀️',1:'🌤',2:'⛅',3:'☁️',
+  45:'🌫',48:'🌫',
+  51:'🌦',53:'🌦',55:'🌧',
+  61:'🌧',63:'🌧',65:'🌧',
+  71:'🌨',73:'🌨',75:'🌨',77:'🌨',
+  80:'🌦',81:'🌧',82:'🌧',
+  95:'⛈',96:'⛈',99:'⛈'
+};
+
+function getWeatherCity(){ return localStorage.getItem(WEATHER_CITY_KEY)||''; }
+
+async function loadWeather(){
+  const el=document.getElementById('weather-block');
+  const cityQuery=getWeatherCity();
+
+  if(!cityQuery){
+    el.innerHTML='<span style="font-size:10px;opacity:.55;color:white;">管理者ページで地域を設定してください</span>';
+    return;
+  }
+
+  try{
+    // Step1: Open-Meteo Geocoding API で都市名→緯度経度
+    const geoRes=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityQuery)}&count=1&language=ja`);
+    const geoData=await geoRes.json();
+    if(!geoData.results||!geoData.results.length) throw new Error('都市が見つかりません: '+cityQuery);
+    const {latitude:lat, longitude:lon, name:cityName}=geoData.results[0];
+
+    // Step2: 天気取得（無料・APIキー不要）
+    const wxRes=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode,apparent_temperature&timezone=Asia%2FTokyo`);
+    const wx=await wxRes.json();
+    const cur=wx.current;
+    const icon=WMO_ICONS[cur.weathercode]||'🌡';
+    const temp=Math.round(cur.temperature_2m);
+    const feel=Math.round(cur.apparent_temperature);
+
+    el.innerHTML=`<div class="weather-chip">
+      <span class="weather-icon">${icon}</span>
+      <span class="weather-temp">${temp}°C</span>
+      <span class="weather-desc">体感${feel}°</span>
+      <span class="weather-loc">${cityName}</span>
+    </div>`;
+  }catch(e){
+    el.innerHTML=`<span style="font-size:10px;opacity:.5;color:white;">⚠ 天気取得失敗（都市名を確認）</span>`;
+    console.warn('Weather error:',e.message);
+  }
+}
+
+// ===== INIT =====
+document.getElementById('today-date').textContent=new Date().toLocaleDateString('ja-JP',{month:'long',day:'numeric',weekday:'short'});
+
+async function refreshAll(){
+  await loadDocs();
+  await loadBlogs();
+  updateGreeting();
+  updateAvatar();
+  renderHomeNews();
+  renderHomeBlog();
+  updateAlert();
+}
+
+refreshAll();
+loadWeather();
+loadAndRenderCalendar();
+
+if(!getUsername()){
+  setTimeout(()=>{
+    document.getElementById('name-prompt-bg').style.display='flex';
+    setTimeout(()=>document.getElementById('name-prompt-input').focus(),100);
+  },400);
+}
+
+window.addEventListener('storage',e=>{
+  if(e.key===STORE_KEY||e.key===BLOG_KEY) refreshAll();
+});
+</script>
+</body>
+</html>
