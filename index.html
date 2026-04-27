@@ -211,7 +211,8 @@ button{font-family:inherit;}
   <button class="nav-tab active" onclick="showPage('home',this,0)">ホーム</button>
   <button class="nav-tab" onclick="showPage('notice',this,1)">お知らせ</button>
   <a class="nav-tab" href="blog.html">社内ブログ</a>
-
+  <button class="nav-tab" onclick="showPage('security',this,3)">セキュリティ</button>
+  <button class="nav-tab" onclick="showPage('files',this,4)">ファイル検索</button>
   <div class="nav-right">
     <a class="admin-link" href="admin.html">⚙ 管理者</a>
     <div class="nav-avatar" id="nav-avatar" onclick="openNamePrompt()">?</div>
@@ -230,7 +231,12 @@ button{font-family:inherit;}
     <a class="bn-tab" href="blog.html">
       <div class="bn-tab-icon">✏️</div><div class="bn-tab-label">ブログ</div>
     </a>
-
+    <button class="bn-tab" id="bnt-security" onclick="showPage('security',null,3)">
+      <div class="bn-tab-icon">🔒</div><div class="bn-tab-label">セキュリティ</div>
+    </button>
+    <button class="bn-tab" id="bnt-files" onclick="showPage('files',null,4)">
+      <div class="bn-tab-icon">🗂</div><div class="bn-tab-label">ファイル</div>
+    </button>
   </div>
 </div>
 
@@ -333,7 +339,8 @@ button{font-family:inherit;}
       <div class="ql-grid">
         <div class="ql-item" onclick="showPage('notice',null,1)"><div class="ql-icon" style="background:var(--green-l)">📋</div><div><div class="ql-label">お知らせ</div><div class="ql-sub">PDF・連絡事項</div></div></div>
         <div class="ql-item" onclick="location.href='blog.html'"><div class="ql-icon" style="background:var(--blue-l)">✏️</div><div><div class="ql-label">ブログ</div><div class="ql-sub">社内投稿</div></div></div>
-        <div class="ql-item" href="admin.html" onclick="location.href='admin.html'"><div class="ql-icon" style="background:var(--amber-l)">⚙️</div><div><div class="ql-label">管理者ページ</div><div class="ql-sub">投稿・設定</div></div></div>
+        <div class="ql-item" onclick="showPage('security',null,3)"><div class="ql-icon" style="background:var(--red-l)">🔒</div><div><div class="ql-label">セキュリティ</div><div class="ql-sub">情報・対策</div></div></div>
+        <div class="ql-item" onclick="showPage('files',null,4)"><div class="ql-icon" style="background:var(--amber-l)">🗂️</div><div><div class="ql-label">ファイル検索</div><div class="ql-sub">社内共有</div></div></div>
       </div>
     </div>
   </div>
@@ -345,15 +352,9 @@ button{font-family:inherit;}
     <div style="font-size:17px;font-weight:600;">お知らせ</div>
     <span style="font-size:11px;color:var(--text3)">日付の新しい順</span>
   </div>
-  <!-- 検索バー -->
-  <div style="position:relative;margin-bottom:10px;">
-    <input type="text" id="notice-search" placeholder="🔍 PDFファイル名で検索..." oninput="renderNotice()"
-      style="width:100%;height:40px;border:0.5px solid var(--border);border-radius:var(--radius);padding:0 14px 0 14px;font-size:13px;outline:none;background:var(--surface);font-family:inherit;transition:border-color .15s;"
-      onfocus="this.style.borderColor='var(--green)'" onblur="this.style.borderColor=''">
-  </div>
-  <!-- フィルター -->
   <div class="filter-row">
     <button class="filter-btn active" onclick="filterNotice('all',this)">すべて</button>
+    <button class="filter-btn" onclick="filterNotice('security',this)">🔒 セキュリティ</button>
     <button class="filter-btn" onclick="filterNotice('rule',this)">📋 規約・規程</button>
     <button class="filter-btn" onclick="filterNotice('notice',this)">📢 連絡事項</button>
     <button class="filter-btn" onclick="filterNotice('other',this)">その他</button>
@@ -361,6 +362,17 @@ button{font-family:inherit;}
   <div id="notice-list"><div style="color:var(--text3);font-size:13px;text-align:center;padding:40px 0;">お知らせがありません</div></div>
 </div>
 
+<!-- ===== SECURITY ===== -->
+<div class="page" id="page-security">
+  <div style="font-size:17px;font-weight:600;margin-bottom:16px;">セキュリティ情報</div>
+  <div style="color:var(--text2);text-align:center;padding:60px 0;">(準備中)</div>
+</div>
+
+<!-- ===== FILES ===== -->
+<div class="page" id="page-files">
+  <div style="font-size:17px;font-weight:600;margin-bottom:16px;">ファイル検索</div>
+  <div style="color:var(--text2);text-align:center;padding:60px 0;">(準備中)</div>
+</div>
 
 <!-- PDF MODAL -->
 <div class="modal-bg" id="pdf-modal" onclick="if(event.target===this)closePdfModal()">
@@ -373,7 +385,6 @@ button{font-family:inherit;}
   </div>
 </div>
 
-<script src="api.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -397,12 +408,13 @@ const BLOG_KEY='portal_blogs';
 const NAME_KEY='portal_username';
 const CAL_ID_KEY='portal_cal_id';
 const CAL_KEY_KEY='portal_cal_key';
+const GH_RAW='https://raw.githubusercontent.com/mgunshi3060/portal.index/main/';
 
 let docs=[], blogs=[];
 
 // ===== NAVIGATION =====
-const PAGE_IDS=['home','notice','blog'];
-const BNT_IDS=['bnt-home','bnt-notice',null];
+const PAGE_IDS=['home','notice','blog','security','files'];
+const BNT_IDS=['bnt-home','bnt-notice',null,'bnt-security','bnt-files'];
 
 function showPage(id,btn,idx){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -441,12 +453,20 @@ function updateAvatar(){
   document.getElementById('nav-avatar').textContent=name?name.slice(0,2):'?';
 }
 
-// ===== DATA (api.js に委譲 — XSERVER移行時は api.js の PORTAL_API_MODE を変更するだけ) =====
+// ===== DATA =====
 async function loadDocs(){
-  docs = await apiLoad('docs', STORE_KEY);
+  try{
+    const res=await fetch(GH_RAW+'data/docs.json?_='+Date.now());
+    if(res.ok){ docs=await res.json(); localStorage.setItem(STORE_KEY,JSON.stringify(docs)); return; }
+  }catch(e){}
+  try{ const r=localStorage.getItem(STORE_KEY); if(r) docs=JSON.parse(r); }catch(e){ docs=[]; }
 }
 async function loadBlogs(){
-  blogs = await apiLoad('blogs', BLOG_KEY);
+  try{
+    const res=await fetch(GH_RAW+'data/blogs.json?_='+Date.now());
+    if(res.ok){ blogs=await res.json(); localStorage.setItem(BLOG_KEY,JSON.stringify(blogs)); return; }
+  }catch(e){}
+  try{ const r=localStorage.getItem(BLOG_KEY); blogs=r?JSON.parse(r):[]; }catch(e){ blogs=[]; }
 }
 
 // ===== DATE =====
@@ -612,10 +632,8 @@ function renderHomeBlog(){
 let currentFilter='all';
 function renderNotice(){
   const list=document.getElementById('notice-list');
-  const q=(document.getElementById('notice-search')||{value:''}).value.trim().toLowerCase();
   const sorted=[...docs].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  let filtered=currentFilter==='all'?sorted:sorted.filter(d=>d.tag===currentFilter);
-  if(q) filtered=filtered.filter(d=>d.name.toLowerCase().includes(q));
+  const filtered=currentFilter==='all'?sorted:sorted.filter(d=>d.tag===currentFilter);
   if(!filtered.length){list.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:40px 0;">該当するお知らせがありません</div>';return;}
   list.innerHTML=filtered.map(d=>{
     const t=TAG[d.tag]||TAG.other;
